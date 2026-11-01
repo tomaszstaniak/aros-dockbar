@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <title>Terminal window</title>
+  <defs>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#dbe5ee"/><stop offset="1" stop-color="#74889b"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#263945"/><stop offset="1" stop-color="#101d29"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="48" cy="83" rx="36" ry="5" fill="#071629" opacity=".24"/>
+  <rect x="9" y="17" width="78" height="65" rx="9" fill="url(#frame)" stroke="#60768b" stroke-width="2"/>
+  <rect x="14" y="32" width="68" height="44" rx="4" fill="url(#screen)"/>
+  <path d="M16 20H78" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".6"/>
+  <circle cx="19" cy="25" r="3" fill="#ef8972"/>
+  <circle cx="29" cy="25" r="3" fill="#efd280"/>
+  <circle cx="39" cy="25" r="3" fill="#86c9ad"/>
+  <path d="M25 45L35 54L25 63" fill="none" stroke="#8ae4bd" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M43 64H60" stroke="#dceef2" stroke-width="5" stroke-linecap="round"/>
+  <path d="M18 36H77" stroke="#486170" opacity=".4"/>
+</svg>

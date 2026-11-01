@@ -1,0 +1,2 @@
+- Tested only on AROS x86_64 ABIv11 2026.09 under QEMU, not on real
+  hardware, mainline AROS, i386, Raspberry Pi or other systems.

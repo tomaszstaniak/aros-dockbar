@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "conditions": {
+    "clear-day": {
+      "resource": "clear-day.svg"
+    },
+    "clear-night": {
+      "resource": "clear-night.svg"
+    },
+    "partly-cloudy-day": {
+      "resource": "partly-cloudy-day.svg"
+    },
+    "partly-cloudy-night": {
+      "resource": "partly-cloudy-night.svg"
+    },
+    "cloudy": {
+      "resource": "cloudy.svg"
+    },
+    "fog": {
+      "resource": "fog.svg"
+    },
+    "drizzle": {
+      "resource": "drizzle.svg"
+    },
+    "rain": {
+      "resource": "rain.svg"
+    },
+    "freezing-rain": {
+      "resource": "freezing-rain.svg"
+    },
+    "snow": {
+      "resource": "snow.svg"
+    },
+    "showers-day": {
+      "resource": "showers-day.svg"
+    },
+    "showers-night": {
+      "resource": "showers-night.svg"
+    },
+    "snow-showers": {
+      "resource": "snow-showers.svg"
+    },
+    "thunderstorm": {
+      "resource": "thunderstorm.svg"
+    },
+    "thunderstorm-hail": {
+      "resource": "thunderstorm-hail.svg"
+    },
+    "unknown": {
+      "resource": "unknown.svg"
+    },
+    "cloudy-day": {
+      "resource": "cloudy.svg"
+    },
+    "cloudy-night": {
+      "resource": "cloudy.svg"
+    },
+    "fog-day": {
+      "resource": "fog.svg"
+    },
+    "fog-night": {
+      "resource": "fog.svg"
+    },
+    "drizzle-day": {
+      "resource": "drizzle.svg"
+    },
+    "drizzle-night": {
+      "resource": "drizzle.svg"
+    },
+    "freezing-rain-day": {
+      "resource": "freezing-rain.svg"
+    },
+    "freezing-rain-night": {
+      "resource": "freezing-rain.svg"
+    },
+    "rain-day": {
+      "resource": "rain.svg"
+    },
+    "rain-night": {
+      "resource": "rain.svg"
+    },
+    "snow-day": {
+      "resource": "snow.svg"
+    },
+    "snow-night": {
+      "resource": "snow.svg"
+    },
+    "snow-showers-day": {
+      "resource": "snow-showers.svg"
+    },
+    "snow-showers-night": {
+      "resource": "snow-showers.svg"
+    },
+    "thunderstorm-day": {
+      "resource": "thunderstorm.svg"
+    },
+    "thunderstorm-night": {
+      "resource": "thunderstorm.svg"
+    },
+    "thunderstorm-hail-day": {
+      "resource": "thunderstorm-hail.svg"
+    },
+    "thunderstorm-hail-night": {
+      "resource": "thunderstorm-hail.svg"
+    },
+    "scattered-clouds-day": {
+      "resource": "partly-cloudy-day.svg"
+    },
+    "scattered-clouds-night": {
+      "resource": "partly-cloudy-night.svg"
+    }
+  }
+}

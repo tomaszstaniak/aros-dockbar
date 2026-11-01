@@ -1,0 +1,3 @@
+AROS x86_64, ABIv11 (for example AROS One). Tested on AROS ABIv11 2026.09
+under QEMU. Other systems are not tested. This package includes Weather
+(Widgets drawer); it needs a running TCP/IP stack for its data.

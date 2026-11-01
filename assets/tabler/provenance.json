@@ -1,0 +1,13 @@
+{
+  "upstream": "https://github.com/tabler/tabler-icons",
+  "revision": "a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d",
+  "license": "MIT",
+  "source_directory": "icons/outline",
+  "files": [
+    "adjustments-horizontal.svg",
+    "refresh.svg",
+    "x.svg",
+    "chevron-left.svg",
+    "chevron-right.svg"
+  ]
+}

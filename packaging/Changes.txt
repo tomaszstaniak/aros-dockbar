@@ -1,0 +1,339 @@
+Dockbar changes
+===============
+
+0.5-test12
+----------
+- New package for AROS x86_64 mainline (x86_64-v1), with Weather. It
+  has no SVG renderer yet: it is a .info-only package.
+- On mainline AROS with window composition, see-through docks are truly
+  transparent: what is behind them shows through live, and they no
+  longer disappear for a moment to take a picture of the desktop.
+  Frosted glass cannot be changed for such docks.
+- Moving the pointer over a dock now redraws only the boxes that change.
+- About's Copy version info names the target and how the docks are shown.
+- "Edit..." in Edit items could fail with "Could not open editor" when
+  several docks were open. The list now closes while the item is edited
+  and comes back on the same item afterwards.
+
+0.5-test11
+----------
+- New "Hover effect" in Preferences (Defaults for all docks, and each
+  dock's Appearance tab): None, Lift or Magnify. Lift raises the icon
+  under the pointer a few pixels; Magnify makes it and its neighbours a
+  little larger. Both appear and fade smoothly. New configurations use
+  Lift; settings from earlier versions stay at None. Docks without a
+  bar show no hover effect yet.
+- Earlier test versions cannot read settings saved by this one; they
+  report that the settings need repair and leave the file unchanged.
+
+0.5-test10
+----------
+- Started from S:User-Startup, Dockbar could stop before showing
+  anything, leaving a grey screen. It now shows its docks there too,
+  before the desktop icons appear. The ReadMe shows the line to add to
+  S:User-Startup.
+
+0.5-test9
+---------
+- The command editor is shorter: wide fields, a file chooser for the
+  script file, the working directory and the icon, and a hint only for
+  the option you chose. Details about dropped files and an example
+  script are under Help. A missing name or command is shown at its field
+  and what you typed stays.
+- Removing a widget now also deletes its settings and its saved
+  forecast. Widget drawers left behind by earlier versions stay.
+
+0.5-test8
+---------
+- A see-through dock no longer takes the About window's Licenses window
+  into its desktop picture.
+- About: clicking the author's address says whether a web browser was
+  started; without one set up in Prefs/OpenURL nothing happened before.
+
+0.5-test7
+---------
+- Separators and spaces can be removed and moved: right-click or
+  Shift-click one to open its editor, drag it to a new place. A plain
+  click on them does nothing. A locked dock protects them too.
+- New "Edit items..." in the grip menu: every item of the dock in a list,
+  also spaces and items on a dock without a bar, with Edit, Remove,
+  Move up and Move down.
+- Weather: the card's buttons show their icons in both packages; the
+  package without SVG support showed letters (S, X, <, >, R) instead.
+- Weather: the widget on the dock is narrower, with room for a
+  temperature and its unit, and keeps its width when the data changes.
+  Its highlight now has the same margin on both sides, and the dark box
+  that could stay around the animated icon after a click is gone.
+- New About window with the version, author and the licences of this
+  release. Copy version info puts the version, target and Weather
+  version on the clipboard. Docks and widgets keep working while it is
+  open.
+- Weather: when a connection fails, the message names the failure first
+  (for example a name that cannot be resolved); a missing certificate
+  file of the widget is mentioned after it.
+
+0.5-test6
+---------
+- Weather: the widget now finds its own certificates from the Dockbar
+  drawer wherever it is installed, so it no longer depends on the
+  system's certificate file. If its certificate file cannot be read, the
+  message says so, and weather.log names the file it looked for.
+- Weather: a CURL_CA_BUNDLE variable no longer stops the widget from
+  using its own certificates; that file is tried second.
+
+0.5-test5
+---------
+- Clicks on a dock while it changes size are no longer half lost: when
+  too many arrive at once, the click or drag is cancelled instead of
+  leaving an item pressed.
+- Weather: a late answer from the weather service no longer lets the next
+  request start while the previous one is still running.
+
+0.5-test4
+---------
+- Adding, moving or removing an item no longer makes every dock vanish
+  and come back. Only the docks that changed are updated; a dock with a
+  bar keeps its window, also when it grows or shrinks. Docks without a
+  bar ("None") are still opened again, briefly. Widgets keep their data
+  and are not asked for new data because of a move.
+- Weather: city search and forecasts now use certificates shipped with
+  the widget, so they no longer depend on the system's certificate file.
+  When a secure connection fails, the message says whether the
+  certificate file could not be read or the server's certificate was not
+  accepted, and mentions the system date when it looks wrong. Details of
+  each request are written to WidgetState/weather.log.
+- Weather: when the weather service does not answer within a minute, the
+  request is ended and tried again later; a restart of Dockbar is no
+  longer needed. The animated icon uses less processor time.
+- A widget removed from the dock no longer keeps its memory until Dockbar
+  quits.
+- A locked dock now also protects its widgets: their settings cannot be
+  saved and they cannot be removed. The card and Refresh still work.
+
+0.5-test3
+---------
+- Weather is part of the x86_64 package (Widgets drawer). Add it from the
+  dock menu with "Add widget..."; existing docks are not changed.
+- Applets are now called widgets (menu, windows, drawers Widgets and
+  WidgetState). Drawers of earlier builds named Applets and AppletState
+  are still used when the new ones are absent.
+- After Dockbar had started a Shell program (no icon of its own, or the
+  CLI tool type), Dockbar's drawer could stay "in use" until the system
+  was restarted. Fixed; this also affected earlier versions.
+- Shell programs clicked in a drawer panel start in their own drawer,
+  like those on the dock.
+- Includes everything from 0.5-test2 (withdrawn): script drops with
+  .KEY FILES/M, refusal of drops the Shell would misread, faster drawer
+  panels.
+
+0.5-test2 (withdrawn)
+---------------------
+- Scripts with dropped files: a script that starts with .KEY FILES/M and
+  writes <FILES> without quotes now gets every name exactly, including
+  names with spaces, quotes and *. A script without FILES/M in its .KEY
+  line is no longer run with files ("The script needs .KEY FILES/M");
+  in 0.5-test1 it ran on names split at spaces. Example:
+  Examples/ListFiles.script.
+- A drop is refused when the AROS Shell would misread the command line
+  (a ; or | in a name after a name with a double quote); 0.5-test1 ran
+  the command on cut names.
+- Shell programs (no icon of their own, or the CLI tool type) start in
+  their own drawer, as from Wanderer, both on a click and with dropped
+  files, so relative file names mean the same.
+- Drawer panels show their icons much sooner, and at once when a panel
+  is opened again.
+  Refresh and changes in the drawer keep the list and icons on show
+  while it is read again, and only new or changed icons are loaded.
+  Icons stay in memory (at most about 3 MB) and are given back two
+  minutes after the panel closes.
+- An applet item in docks.config whose applet is not installed shows as
+  "Unavailable" and is kept when the dock is saved.
+
+0.5-test1
+---------
+- On drop: a program or command can open files dropped on the middle of
+  its icon (Edit: On drop). Programs get them as Workbench arguments;
+  commands where their line says {files}, quoted; scripts as their
+  arguments. Off for every existing item. Works on a locked dock.
+- Dropping between icons still adds shortcuts; several icons dropped
+  together are all added. Drops on drawers, clocks and separators are
+  refused without any change.
+- Drawers can open as a panel beside the dock (Edit: Open on click),
+  with the drawer's current contents, subdrawers, Back, Refresh and
+  Open in Wanderer. Existing drawer items still open Wanderer windows.
+- A dock item on a disk that is not inserted no longer stops the dock
+  with an "insert volume" requester (icons, drops and panels).
+- A drop of several files that cannot all be read is not opened at
+  all ("Not opened: ..."); shortcuts are added for the ones that can.
+- A dropped .info file is passed to a program as it is; only a
+  shortcut stands for the object.
+- A Shell program (no icon of its own) gets dropped names with quotes
+  and * passed exactly.
+- {files} must stand on its own and outside quotes; Save refuses it
+  otherwise.
+- A drawer panel that changes while it is being read reads it again
+  once when it is done.
+- This package contains no applets.
+- docks.config has a newer format again (version 8). 0.4-test3 cannot
+  read it and does not overwrite it (it starts with its default dock).
+
+0.5-weather-dev (experimental)
+------------------------------
+- External applet folders, metadata-only discovery, exact architecture/ABI
+  provider selection, per-instance settings and configuration version 7.
+- Weather: Open-Meteo provider, separate cities and units, retained cache,
+  hourly chart and seven-day panel, and original replaceable SVG placeholders.
+- Provider requests run outside the UI. Session/generation matching rejects
+  delayed replies after settings changes; scheduling uses elapsed EClock time.
+- Experimental API 1. Animated artwork, Screenbar integration and a market
+  remain future work. See Applets-ReadMe.md for details and current limits.
+
+0.4-test3
+---------
+- Commands: "Add command..." adds an AmigaDOS command line or script
+  file, with a working directory and an optional Shell window. A
+  missing script or working directory is reported without stopping the
+  dock (no "insert volume" requester).
+- Commands: a script named without a disk or drawer is looked for in
+  the working directory, where it also runs. The Shell window title is
+  the command's name with any "/" shown as "-".
+- Preferences rearranged: "Defaults for all docks" is the first entry
+  in the list; a dock's settings are in four tabs (Placement, Content,
+  Appearance, Behaviour); "Inherit" shows the inherited value in
+  brackets; settings that do not apply are greyed; a line of help for
+  each page.
+- Preferences: Apply shows changes on the docks without saving. Cancel,
+  the close gadget and a screen mode change take them back. A failed
+  Save keeps the window open and says so. Help shows the ReadMe.
+- While Preferences was open, Dockbar lost about 3 KB of memory per
+  second (the way it asked Zune for input). Fixed; the item editor
+  asked the same way and was changed too.
+- After a command had been started from a dock, Dockbar's own drawer
+  stayed "in use" until the computer was restarted, so it could not be
+  deleted or moved. Commands (and Help) no longer hold it.
+- Saving the settings failed on systems where removing a file that
+  does not exist reports no reason (seen on Macaros). Fixed.
+- docks.config has a newer format again (see ReadMe).
+
+0.4-test2
+---------
+- Smooth text: a letter that a font could only give as a bitmap, or
+  not at all, is now taken from the next font or drawn as a box; it is
+  never an empty gap. Parts of letters that reach outside their width
+  (italic, accents, a "j" below and to the left) are no longer cut off.
+- Smooth text: two names could in rare cases show each other's picture
+  (a cache keyed only by a hash). Fixed.
+- Icon and text: the name now goes under the icon by default (Text
+  position: Under icon / Beside icon). Docks from 0.4-test1 keep the
+  name beside the icon.
+- A scrolled dock with Icon and text moved only the icons and left the
+  names in place, over other icons. Icon and name now move together.
+- While an icon is dragged from Wanderer, the docks are no longer
+  redrawn (no hover highlight); highlights could leave fragments there.
+  The docks are redrawn once the drag ends.
+- Labels under icons are no longer added to items that show their name.
+- ReadMe: what Smooth covers and which version reads which
+  docks.config, stated in full.
+- docks.config has a newer format again (see ReadMe).
+
+0.4-test1
+---------
+- Text buttons: a dock can show its programs, drawers and groups as
+  icons, as text buttons or as icons with text; each item can differ
+  from its dock. Long names end in "..." and show in full under the
+  pointer. Text buttons are Plain or on Plates; without a bar they keep
+  a fixed area for their plate.
+- Text: System (the screen font, the default) or Smooth (anti-aliased,
+  from the TrueType fonts of the system, with Polish letters under
+  ISO-8859-2). Smooth covers names, text buttons, clocks and tooltips;
+  menus, panels and windows keep the screen font.
+- A group opens when an icon dragged from Wanderer is held on it.
+- After a drag from Wanderer, docks and group panels are redrawn (the
+  drag image could leave parts of a panel blank).
+- A tooltip or message still open when a drag from Wanderer starts now
+  stays until the drag ends, so it leaves no trace on the desktop.
+- docks.config has a newer format. 0.4 reads the files of 0.2 and 0.3;
+  0.3 and 0.2 cannot read the new one and leave it untouched (see
+  ReadMe).
+
+0.3-test2
+---------
+- Dragging an icon from Wanderer over a dock left the names of the icons
+  passed on the desktop. Names are no longer shown during such a drag,
+  and they now appear only after the pointer rests on an icon.
+- Background None: an icon whose clicked look is larger or smaller than
+  its normal look (a PNG icon, say) is no longer cut off, and nothing is
+  left of the other look. Clocks keep room for their widest time and
+  date.
+- Preferences say what None means: clocks keep a small plate, and a dock
+  too long for the screen is shown with its bar. The choice is now
+  called "None".
+
+0.3-test1
+---------
+- Colours: Dark, Light or Automatic (chosen from the desktop behind the
+  dock). Bars, labels, highlights, the drop mark, group panels, the grip
+  menu and tooltips all use the same colours.
+- Background "None (icons only)": no bar, frame or shadow; clicks between
+  the icons reach the desktop. Clocks get a small plate.
+- The grip can be hidden. Ctrl-click a dock, or start Dockbar again, to
+  reach the menu or Preferences.
+- Defaults for all docks in Preferences; each dock can use them or set
+  its own colours, background, transparency, glass and grip.
+- Lock now protects the contents too: no adding, removing, reordering,
+  grouping or editing while a dock is locked.
+- Highlights have the same spacing and rounding for icons, groups and
+  clocks and no longer touch the dock's frame; a clock's highlight
+  follows its text.
+- A new installation has Prefs next to Tools, and automatic colours.
+  Existing docks keep their items and their dark look.
+- docks.config has a newer format that 0.2 cannot read (see ReadMe).
+
+0.2-test3
+---------
+- A wallpaper change that arrived while a see-through dock was taking
+  its picture of the desktop could be missed; the dock then kept the
+  old picture. Fixed.
+- ReadMe: how to switch on the log and report a background problem.
+
+0.2-test2
+---------
+- See-through docks take a new picture of the desktop by themselves
+  after a screen mode change, when the Wanderer wallpaper changes and
+  when a dock is moved. A wallpaper that appears late (slow graphics
+  cards) replaces the grey picture when it arrives. Refresh icons is no
+  longer needed for this.
+- Moving a see-through dock no longer closes and reopens every dock.
+- Preferences could fail to open with four or more docks
+  ("Could not open preferences"). Fixed.
+
+0.2-test1
+---------
+- Several docks at once (up to 8), each with its own name, contents,
+  groups, placement and appearance. New, Duplicate and Delete in
+  Preferences.
+- Vertical docks. Placement free or at any screen edge, with alignment
+  and distance from the edge.
+- Preferences now cover all docks: orientation, position, lock, icon size,
+  spacing, corner radius, labels (none, hover, always), transparency and
+  frosted glass (experimental, off by default).
+- Labels can be shown under the icons.
+- Icons and groups can be dragged from one dock to another.
+- A group opens when a dragged program is held over it.
+- Drawers and disks dropped on a dock keep their own icon.
+- Grip menu: Add separator, Add space, Add clock, Refresh icons.
+- Clocks are separate items; each can show seconds and the date.
+- Programs without their own .info show the same icon as in Wanderer.
+- The same program reached by two names (SYS: and the disk name, or an
+  assign) is recognised as already in place.
+- A dock too long for the screen gets smaller icons and then scrolls.
+- Screen mode changes work while Dockbar runs: docks close with the old
+  screen and come back on the new one.
+- Settings are in docks.config. 0.1's dock.config and dock.prefs are read
+  once and never changed.
+- Flicker on pointer movement reduced further.
+
+0.1-test1
+---------
+First test release: one horizontal dock, groups, Zune preferences and
+editor, grip menu, .info and SVG icons.

@@ -1,0 +1,5 @@
+.KEY FILES/M
+; Dockbar example: a Script item with "On drop" set to "Run with the files".
+; Dockbar passes each dropped file as one name in quotes in FILES, so
+; write <FILES> without quotes of its own.
+List <FILES>

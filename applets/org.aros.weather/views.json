@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "compact": {
+    "primary": "temperature",
+    "secondary": "location",
+    "icon": "condition",
+    "tooltip": "summary"
+  },
+  "expanded": {
+    "component": "cards",
+    "title": "location",
+    "value": "temperature",
+    "subtitle": "description",
+    "range": "range",
+    "metrics": [
+      {
+        "label": "Feels like",
+        "field": "feelsLike"
+      },
+      {
+        "label": "Wind",
+        "field": "wind"
+      }
+    ],
+    "strip": "hourly",
+    "stripTitle": "Next 24 hours",
+    "list": "daily",
+    "listTitle": "5-day forecast"
+  },
+  "assets": "assets/conditions.json"
+}

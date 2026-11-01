@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "search": {
+    "operation": "geocode",
+    "label": "Search city",
+    "map": {
+      "label": "location",
+      "coordinates": [
+        "latitude",
+        "longitude"
+      ]
+    }
+  },
+  "fields": [
+    {
+      "key": "location",
+      "label": "Location name",
+      "type": "text",
+      "default": "",
+      "maxLength": 100
+    },
+    {
+      "key": "latitude",
+      "label": "Latitude",
+      "type": "number",
+      "min": -90,
+      "max": 90
+    },
+    {
+      "key": "longitude",
+      "label": "Longitude",
+      "type": "number",
+      "min": -180,
+      "max": 180
+    },
+    {
+      "key": "temperatureUnit",
+      "label": "Temperature",
+      "type": "choice",
+      "choices": [
+        "celsius",
+        "fahrenheit"
+      ],
+      "default": "celsius"
+    },
+    {
+      "key": "windUnit",
+      "label": "Wind speed",
+      "type": "choice",
+      "choices": [
+        "kmh",
+        "ms",
+        "mph"
+      ],
+      "default": "kmh"
+    },
+    {
+      "key": "refreshMinutes",
+      "label": "Refresh (minutes)",
+      "type": "integer",
+      "min": 15,
+      "max": 60,
+      "default": 15
+    }
+  ]
+}

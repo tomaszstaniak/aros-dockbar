@@ -1,0 +1,72 @@
+From 32e212d652b49adb7f6fd632626d5e385d7b8fc9 Mon Sep 17 00:00:00 2001
+From: tomaszstaniak <68373859+tomaszstaniak@users.noreply.github.com>
+Date: Sat, 31 Oct 2026 01:44:04 +0100
+Subject: [PATCH] PROTOTYPE backdrop blur: answer SA_BackdropBlurSupport with a
+ versioned contract
+
+A program must not send WA_BackdropBlur on any non-zero answer: neither number is reserved, and an attribute given this number later would say yes as well. Answer a value a program compares for exactly. intuition.library 50.24.
+---
+ compiler/include/intuition/screens.h | 9 ++++++++-
+ rom/intuition/intuition.conf         | 2 +-
+ rom/intuition/screenclass.c          | 7 ++++---
+ 3 files changed, 13 insertions(+), 5 deletions(-)
+
+diff --git a/compiler/include/intuition/screens.h b/compiler/include/intuition/screens.h
+index f0e94bd07a..6ac4ccd198 100644
+--- a/compiler/include/intuition/screens.h
++++ b/compiler/include/intuition/screens.h
+@@ -216,7 +216,14 @@ struct ExtNewScreen
+ #define SA_CompositingFlags     (SA_Dummy + 140) /* [ISG] ULONG           AROS: Allow openers to request compositing modes    */
+ #define SA_AlphaPreCompositingHook (SA_Dummy + 141) /* [ISG] Hook *       AROS: Hook to Pre-Process Composited buffers        */
+ #define SA_ScreenbarTextColor   (SA_Dummy + 160) /* [..G] ULONG           AROS: Raw color for the screenbar text              */
+-#define SA_BackdropBlurSupport  (SA_Dummy + 161) /* [..G] BOOL            AROS PROTOTYPE: WA_BackdropBlur works on this screen */
++#define SA_BackdropBlurSupport  (SA_Dummy + 161) /* [..G] ULONG           AROS PROTOTYPE: 0, or the contract WA_BackdropBlur works by on this screen */
++
++/* PROTOTYPE: what SA_BackdropBlurSupport answers. The numbers of the tag and
++   of WA_BackdropBlur are not reserved, so a program must not send the window
++   tag on any non-zero answer: an attribute given this number later would say
++   yes too. It compares for the exact contract it was written for. "BLR" and a
++   version, raised when the meaning of the tags changes. */
++#define BACKDROPBLUR_CONTRACT_V1 0x424c5201UL
+ 
+ /* SA_Overscan */
+ #define OSCAN_TEXT     1
+diff --git a/rom/intuition/intuition.conf b/rom/intuition/intuition.conf
+index 2b1e7229eb..6ac7d734ba 100644
+--- a/rom/intuition/intuition.conf
++++ b/rom/intuition/intuition.conf
+@@ -1,5 +1,5 @@
+ ##begin config
+-version 50.23
++version 50.24
+ residentpri 15
+ libbasetype struct IntIntuitionBase
+ libbasetypeextern struct IntuitionBase
+diff --git a/rom/intuition/screenclass.c b/rom/intuition/screenclass.c
+index 87def8f464..d91e6fce99 100644
+--- a/rom/intuition/screenclass.c
++++ b/rom/intuition/screenclass.c
+@@ -911,8 +911,9 @@ IPTR ScreenClass__OM_GET(Class *cl, Object *o, struct opGet *msg)
+         break;
+ 
+     /*
+-     * PROTOTYPE: WA_BackdropBlur works for windows with an alpha surface on
+-     * this screen. LayerSurfaceFeatures() is new in graphics.library 45.22;
++     * PROTOTYPE: the contract by which WA_BackdropBlur works for windows
++     * with an alpha surface on this screen, or 0.
++     * LayerSurfaceFeatures() is new in graphics.library 45.22;
+      * an older one cannot be asked (nor can its display blur), and a
+      * layers.library before 50.10 ignores LA_BackdropBlur.
+      */
+@@ -928,7 +929,7 @@ IPTR ScreenClass__OM_GET(Class *cl, Object *o, struct opGet *msg)
+                 CompositeLayersSupported(screen->Screen.RastPort.BitMap, &alphaformat) &&
+                 (ULONG)-1 != alphaformat &&
+                 (LayerSurfaceFeatures(screen->Screen.RastPort.BitMap) & vHidd_CompositorSurface_BackdropBlur))
+-                *msg->opg_Storage = TRUE;
++                *msg->opg_Storage = BACKDROPBLUR_CONTRACT_V1;
+         }
+         break;
+ 
+-- 
+2.54.0 (Apple Git-157)
+

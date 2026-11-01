@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <title>Blue collection folder</title>
+  <defs>
+    <linearGradient id="back" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#62c9fa"/><stop offset="1" stop-color="#207bb8"/>
+    </linearGradient>
+    <linearGradient id="front" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#50c6f7"/><stop offset="1" stop-color="#167ab8"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="48" cy="83" rx="36" ry="5" fill="#082b44" opacity=".23"/>
+  <path d="M10 29Q10 23 16 23H35L42 30H79Q86 30 86 37V75Q86 81 80 81H16Q10 81 10 75Z" fill="url(#back)" stroke="#14649b" stroke-width="2"/>
+  <path d="M20 32H62L73 43V70H20Z" fill="#ecf7ff"/>
+  <path d="M62 32V43H73" fill="#a8d9ed"/>
+  <path d="M27 42H52M27 49H60" fill="none" stroke="#96bed0" stroke-width="3" stroke-linecap="round"/>
+  <path d="M9 47Q8 41 15 41H81Q88 41 87 47L82 76Q81 82 75 82H21Q15 82 14 76Z" fill="url(#front)" stroke="#176a9d" stroke-width="2"/>
+  <path d="M15 44H81" stroke="#b7ebff" stroke-width="2" stroke-linecap="round" opacity=".8"/>
+  <rect x="38" y="57" width="20" height="14" rx="3" fill="#0872ad" opacity=".55"/>
+  <path d="M43 64H53M48 59V69" fill="none" stroke="#def7ff" stroke-width="3" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,8 @@
+{
+  "repositories": {
+    "aros-mainline": {
+      "url": "https://github.com/aros-development-team/AROS.git",
+      "commit": "1fef6c415e"
+    }
+  }
+}

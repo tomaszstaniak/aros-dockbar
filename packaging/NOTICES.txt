@@ -1,0 +1,24 @@
+Dockbar @VERSION@ - contents and origin
+=======================================
+
+Dockbar program, icons (.info) and the SVG files in assets/
+  Original work written for this project. Licence not decided yet
+  (MIT has been proposed, not adopted). No artwork or code from other
+  docks or from the AROS system icons is included.
+
+  @BUILD@
+  It uses the system's icon.library, intuition, graphics, workbench,
+  cybergraphics and Zune (muimaster) libraries; none of them is included
+  or changed.
+
+Smooth text (Preferences, Text: Smooth)
+  The program contains FreeType, libpng and zlib as built by that SDK
+  (static libraries, unchanged): @LIBS@.
+  Portions of this software are copyright (C) 2025 The FreeType Project
+  (https://freetype.org). All rights reserved. FreeType is used under the
+  FreeType License (FTL). libpng is under the PNG Reference Library
+  License version 2, zlib under the zlib License; both permit use in
+  binary form without restriction beyond keeping their notices.
+  No font files are included: Dockbar reads the TrueType fonts installed
+  in the system (FONTS:TrueType/).
+@SVGNOTICE@

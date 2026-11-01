@@ -1,0 +1,3 @@
+  Animated weather icons (assets/sprites.pak): Animated Weather Icons,
+  (c) 2026 Ubaidullah Effendi-Emjedi, used in Dockbar under licence. Not
+  covered by the MIT licence; they may not be extracted or reused.

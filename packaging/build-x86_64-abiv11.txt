@@ -1,0 +1,2 @@
+The program is built with the AROS ABIv11 2026.09 SDK and contains the
+  standard startup code from that SDK.|FreeType 2.14.1, libpng 1.6.48, zlib 1.3.1

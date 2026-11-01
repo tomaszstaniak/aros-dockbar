@@ -1,0 +1,23 @@
+Macaros (AROS hosted on macOS, Apple Silicon, aarch64). Testing build.
+Tested on Macaros 0.2.1, the published release: starting programs, a
+Shell and drawers from a dock; adding a program by dragging it from a
+Wanderer window; making a group and starting a program from it; a
+clock; commands with and without a Shell window, a script and a
+missing script; locking a dock (drops refused, programs still start);
+scrolling of a dock longer than the screen as Icons, as Text and as
+Icon and text; Preferences with Apply, Save and Cancel; quitting and
+starting again with the saved settings. Not tested on Macaros: screen
+mode changes, wallpaper changes, several Macaros versions.
+0.5-test1 on Macaros 0.2.1: the drawer panel (MacRW:), Open in
+Wanderer, a command with {files}, a shortcut added by a drop between
+icons, and settings restored after a restart. Opening a dropped file
+with MultiView could not be checked there: that MultiView opens no file
+at all, also when started from a Shell.
+Limits of this build, not of Macaros: Text is always System (no Smooth
+text, because the Macaros SDK used has no FreeType library to link),
+there are no SVG icons, and there is no Weather (no Weather provider
+exists for Macaros yet).
+Installing: Macaros has no unzip program. Unpack the archive on the
+Mac, for example into the folder that Macaros shows as MacRW:, and
+start Dockbar from there; its settings are saved next to it.
+The rest of this ReadMe describes the x86_64 version.

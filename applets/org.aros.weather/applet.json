@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "id": "org.aros.weather",
+  "name": "Weather",
+  "version": "0.1.0",
+  "description": "Current weather, hourly outlook and a seven-day forecast.",
+  "author": "AROS Dockbar contributors",
+  "license": "MIT",
+  "api": {
+    "min": 1,
+    "max": 1
+  },
+  "hosts": [
+    "dockbar"
+  ],
+  "capabilities": [
+    "network.https"
+  ],
+  "settings": "settings.json",
+  "views": "views.json",
+  "entryPoints": {
+    "x86_64-abiv11": "bin/x86_64-abiv11/WeatherProvider",
+    "x86_64-v1": "bin/x86_64-v1/WeatherProvider"
+  },
+  "refreshOperation": "forecast"
+}

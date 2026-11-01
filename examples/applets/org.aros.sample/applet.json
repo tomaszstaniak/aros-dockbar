@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "id": "org.aros.sample",
+  "name": "Sample applet",
+  "version": "0.1.0",
+  "description": "A minimal provider using the shared API.",
+  "author": "AROS Dockbar contributors",
+  "license": "MIT",
+  "api": {
+    "min": 1,
+    "max": 1
+  },
+  "hosts": [
+    "dockbar"
+  ],
+  "capabilities": [],
+  "settings": "settings.json",
+  "views": "views.json",
+  "entryPoints": {
+    "x86_64-abiv11": "bin/x86_64-abiv11/SampleProvider"
+  }
+}

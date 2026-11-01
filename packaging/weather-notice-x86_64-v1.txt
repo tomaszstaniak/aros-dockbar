@@ -1,0 +1,9 @@
+Weather widget (Widgets/org.aros.weather)
+  Widget files and condition SVG icons: original work, MIT licence (see the
+  widget's LICENSE). Its provider (bin/x86_64-v1/WeatherProvider) contains
+  libcurl 8.21.0, OpenSSL 4.0.1 (Apache License 2.0), the Brotli decoder,
+  Zstandard and zlib as built by mainline AROS; their licence texts are in
+  the widget's licenses/ drawer.
+  certs/ca-bundle.crt: the Mozilla CA certificate store, Mozilla Public
+  License 2.0 (https://mozilla.org/MPL/2.0/).
+  Weather data by Open-Meteo (https://open-meteo.com/), CC BY 4.0.
