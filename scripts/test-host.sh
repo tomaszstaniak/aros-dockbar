@@ -88,4 +88,5 @@ else echo "SKIP textrender: no host FreeType"; fi
 "${CC:-cc}" -std=c99 -Wall -Wextra -Werror -fsanitize=address,undefined -I"$repo/src" "$repo/tests/test_fade.c" "$repo/src/fade.c" -o "$run/test-fade"
 "$run/test-fade"
 
+sh "$repo/tests/test_scan_paths.sh"
 python3 "$repo/tests/test_weather_bundle.py"

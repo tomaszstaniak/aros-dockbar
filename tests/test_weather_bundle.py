@@ -15,7 +15,8 @@ p=pathlib.Path(args[args.index('-o')+1]);p.parent.mkdir(parents=True,exist_ok=Tr
     for name in ['lib/libcurl.a', 'lib/libssl.a', 'lib/libcrypto.a', 'include/curl/curl.h']:
         (sdk/name).parent.mkdir(parents=True, exist_ok=True); (sdk/name).write_bytes(b'')
     env = dict(os.environ, AROS_CC=str(compiler), AROS_SDK=str(sdk), DOCK_TARGET='x86_64-abiv11',
-               DOCK_BUILD_DIR=str(root/'build'), WEATHER_ASSETS_CONFIG=str(root/'absent.json'))
+               DOCK_BUILD_DIR=str(root/'build'), WEATHER_ASSETS_CONFIG=str(root/'absent.json'),
+               DOCK_HOST_TEST='1')
     env['WEATHER_ASSETS_DIR'] = ''  # placeholders, whatever purchased/ holds
     command = ['sh', str(repo/'scripts/build-bundled-applets.sh')]
     subprocess.run(command, env=env, check=True)
@@ -76,5 +77,10 @@ p=pathlib.Path(args[args.index('-o')+1]);p.parent.mkdir(parents=True,exist_ok=Tr
     (app/'bin/x86_64-abiv11/WeatherProvider').unlink()
     env.update(DOCK_SVG='0', DOCK_DIST_DIR=str(root/'dist'))
     result=subprocess.run(['sh',str(repo/'scripts/package.sh')],env=env,capture_output=True,text=True)
-    assert result.returncode != 0 and 'Missing bundled Weather' in result.stderr
+    assert result.returncode != 0 and 'host-test build' in result.stderr, result.stderr
+    # A host-test build is never packaged; without that mark the same build
+    # still fails on the missing provider.
+    (root/'build/HOST-TEST-BUILD').unlink()
+    result=subprocess.run(['sh',str(repo/'scripts/package.sh')],env=env,capture_output=True,text=True)
+    assert result.returncode != 0 and 'Missing bundled Weather' in result.stderr, result.stderr
 print('PASS bundled weather: target compiler, complete package, no sources/state, licensed art packed without loose PNGs or local paths, missing artwork rejected')

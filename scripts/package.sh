@@ -28,6 +28,8 @@ target=$dock_pack
   { echo "No packaging/requirements-$target.txt or build-$target.txt" >&2; exit 1; }
 base="Dockbar-$version-$dock_archive"
 [ -x "$build/package/Dockbar" ] || { echo "Run scripts/build.sh first" >&2; exit 1; }
+# A build made by the host tests with a stand-in compiler is never packaged.
+[ ! -e "$build/HOST-TEST-BUILD" ] || { echo "$build is a host-test build (stand-in compiler); not packaged" >&2; exit 1; }
 if [ "$svg" = 1 ]; then
   # The SVG package ships the renderer: it must be there, built for this
   # target, from the revision named in NOTICES, with its licence text.
@@ -225,11 +227,13 @@ open(sys.argv[1],"w").write(t.replace(old, "- Weather:", 1))' "$app/ReadMe" || e
   find "$root" -exec touch -t "$stamp" {} +
   # No file of a package may carry the build machine's paths: they name
   # the user and the workspace (debug info, __FILE__, embedded compiler
-  # lines of static libraries).
-  ws=$(dirname "$repo"); ws=$(dirname "$ws")
-  leaks=$(LC_ALL=C grep -r -l -a -F -e /Users/ -e /Volumes/ -e "$HOME" -e "$ws" -e "/$(id -un)/" "$root" || true)
-  [ -z "$leaks" ] || { echo "Build paths in the package (fix the build, do not ship):" >&2; echo "$leaks" >&2; exit 1; }
+  # lines of static libraries). The staged tree is scanned, then the
+  # archive itself, by entry names and unpacked content.
+  sh "$repo/scripts/scan-paths.sh" "$root" ||
+    { echo "Build paths or an unreadable file in the package; not packaged" >&2; exit 1; }
   (cd "$root" && zip -X -q -r "$work/$1.zip" Dockbar Dockbar.info)
+  sh "$repo/scripts/scan-paths.sh" "$work/$1.zip" ||
+    { echo "Build paths in $1.zip, or it could not be checked; not delivered" >&2; exit 1; }
   # dist/ is where the user picks archives up: an archive already there may
   # have been handed out, so it is never replaced by different bytes.
   if [ -e "$dist/$1.zip" ]; then
