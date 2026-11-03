@@ -3,12 +3,18 @@ Dockbar changes
 
 0.5.1
 -----
+- Replaces 0.5, which was withdrawn before it was published: its
+  packages contained file paths of the computer they were built on.
+  0.5.1 has the changes of 0.5 below and these fixes.
 - Fixed: in the Weather card, the hourly forecast showed some icons
   empty or only in part. Light clouds were drawn on a strip of nearly
   the same colour; the strip now uses the card's own background.
 - Fixed: the Weather widget for AROS x86_64 mainline did not finish its
   thread library's clean-up when it exited. It is now linked so that the
   clean-up runs.
+- The programs and libraries in the packages no longer contain file
+  paths of the build computer. The licence of the SVG renderer library
+  (MIT) and the licences of what it contains are in licenses/svgicon.
 
 0.5
 ---
