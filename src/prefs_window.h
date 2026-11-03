@@ -20,12 +20,12 @@ struct DockPrefsWindow {
     void *name, *orientation, *placement, *align, *offset, *locked;
     void *icon, *spacing, *corner, *labels, *present, *buttons, *beside;
     /* This dock: each with "Inherit (value)" as its first entry. */
-    void *theme, *background, *own_transparency, *transparency, *glass, *grip, *hover, *running;
+    void *theme, *background, *own_transparency, *transparency, *glass, *grip, *hover;
     /* Defaults for all docks. */
-    void *d_theme, *d_background, *d_transparency, *d_glass, *d_grip, *d_text, *d_hover, *d_running;
+    void *d_theme, *d_background, *d_transparency, *d_glass, *d_grip, *d_text, *d_hover;
     /* Entry texts of the Inherit choices, rewritten when the defaults change. */
-    char inherit[7][48];
-    const char *themes[5], *backgrounds[4], *own[3], *glasses[4], *grips[4], *hovers[5], *runnings[4];
+    char inherit[6][48];
+    const char *themes[5], *backgrounds[4], *own[3], *glasses[4], *grips[4], *hovers[5];
     char header_text[96];
     struct DockSet *set;
     int current;   /* -1: Defaults for all docks; else the dock's index */
@@ -37,10 +37,9 @@ int dock_prefs_window_open(struct DockPrefsWindow *w, struct Screen *screen,
                            const struct DockSet *set, int selected, int x, int y);
 extern int dock_prefs_window_failed;
 /* Set before opening, per dock index, for the docks that are composed
- * (present.h) where the compositor cannot blur: the frosted glass then
- * blurs a picture of the desktop, which a composed dock does not have, so
- * its choice is kept but cannot be changed there. The defaults' choice is
- * fixed only when every dock is such a dock. */
+ * (present.h): the frosted glass blurs a picture of the desktop, which a
+ * composed dock does not have, so its choice is kept but cannot be changed
+ * there. The defaults' choice is fixed only when every dock is composed. */
 extern unsigned char dock_prefs_window_composed[DOCK_MAX_DOCKS];
 extern int dock_prefs_window_all_composed;
 int dock_prefs_window_poll(struct DockPrefsWindow *w);

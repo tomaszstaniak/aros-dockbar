@@ -43,6 +43,12 @@ uint64_t dock_elapsed_us(void)
     return dock_elapsed_feed(&elapsed, (uint64_t)seconds * 1000000u + micros, 10000000u);
 }
 
+int dock_elapsed_exact(void)
+{
+    dock_elapsed_us();
+    return uptime_state == 1;
+}
+
 uint64_t dock_elapsed_ms(void)
 {
     return dock_elapsed_us() / 1000u;

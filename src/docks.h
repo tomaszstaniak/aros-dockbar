@@ -31,14 +31,12 @@ struct DockAppearance {
                         * the system's font files, see textrender.h) */
     int hover;         /* DockHoverEffect: Lift in new configurations, None in
                         * files written before 0.5-test11 */
-    int running;       /* 1: a dot under each program that is running (see
-                        * running.h); off unless chosen */
 };
 
 struct DockLook {
     int icon, corner, spacing, labels, orientation;
     /* Each is DOCK_INHERIT (use the set's defaults) or an own value. */
-    int transparency, glass, theme, background, grip, hover, running;
+    int transparency, glass, theme, background, grip, hover;
     /* Own values only (no defaults): how items show unless an item says
      * otherwise (DockPresentation - 1: 0 icon, 1 text, 2 icon and text),
      * and whether text buttons always have a plate (1) or only when
@@ -82,8 +80,7 @@ int dock_set_valid(const struct DockSet *set);
 /* Index of the dock with this id, or -1. */
 int dock_set_find(const struct DockSet *set, int id);
 
-/* Version 10 adds running indicators, shared and per dock (older files
- * read as off with every dock inheriting). Version 9 since 0.5-test11 (hover effect, shared and per dock; older
+/* Version 9 since 0.5-test11 (hover effect, shared and per dock; older
  * files read as None with every dock inheriting). Version 5 since 0.4-test2 (caption under or beside the icon); version 4
  * files of 0.4-test1 keep it beside. Version 4 since 0.4 (presentation of
  * items: icon, text, both); version 3

@@ -23,8 +23,79 @@ export TZ=UTC  # same archive bytes on every host
 target=$dock_pack
 [ -f "$repo/packaging/requirements-$target.txt" ] && [ -f "$repo/packaging/build-$target.txt" ] ||
   { echo "No packaging/requirements-$target.txt or build-$target.txt" >&2; exit 1; }
-base="Dockbar-$version-$target"
+base="Dockbar-$version-$dock_archive"
 [ -x "$build/package/Dockbar" ] || { echo "Run scripts/build.sh first" >&2; exit 1; }
+if [ "$svg" = 1 ]; then
+  # The SVG package ships the renderer: it must be there, built for this
+  # target, from the revision named in NOTICES, with its licence text.
+  lib="$build/package/libs/svgicon.library"
+  [ -f "$lib" ] || { echo "No $lib: build with SVGICON_LIBRARY set, or package with DOCK_SVG=0" >&2; exit 1; }
+  dock_check_svgicon "$lib" "$build/svgicon.BUILDINFO"
+  # Revision and renderer: from the library's BUILDINFO, or, for a library
+  # built before BUILDINFO existed, from a pinned entry for exactly its bytes.
+  prov="$repo/packaging/svg-provenance.txt"
+  [ -f "$prov" ] || { echo "Missing $prov" >&2; exit 1; }
+  pin_commit=$(sed -n 's/^lunasvg_commit=//p' "$prov")
+  pin_licence=$(sed -n 's/^lunasvg_license_sha256=//p' "$prov")
+  [ -n "$pin_commit" ] && [ -n "$pin_licence" ] || { echo "$prov names no renderer commit or licence checksum" >&2; exit 1; }
+  lib_sum=$(shasum -a 256 "$lib" | cut -d' ' -f1)
+  if [ -f "$build/svgicon.BUILDINFO" ]; then
+    info="$build/svgicon.BUILDINFO"
+    case "$(sed -n 's/^target=//p' "$info")" in abiv11) info_abi=v11 ;; v1|raspi) info_abi=v1 ;; *) info_abi=unknown ;; esac
+    [ "$info_abi" = "$dock_abi" ] || { echo "$info is for another target than $dock_target" >&2; exit 1; }
+    info_rev=$(sed -n 's/^revision=//p' "$info")
+    [ "$info_rev" = "$svgrev" ] || {
+      echo "svgicon.library was built from $info_rev, SVGICON_REVISION is $svgrev" >&2; exit 1; }
+    [ "$(sed -n 's/^sha256=//p' "$info")" = "$lib_sum" ] ||
+      { echo "$lib differs from the library its BUILDINFO describes" >&2; exit 1; }
+    [ -z "$(sed -n 's/^variant=//p' "$info")" ] ||
+      { echo "$info describes a test variant of the library, not svgicon.library" >&2; exit 1; }
+    [ "$(sed -n 's/^lunasvg=//p' "$info")" = "$pin_commit" ] ||
+      { echo "$info names LunaSVG $(sed -n 's/^lunasvg=//p' "$info"), $prov pins $pin_commit" >&2; exit 1; }
+    if [ "$(sed -n 's/^target=//p' "$info")" = raspi ]; then
+      # The C++ runtime inside the Pi library: the pinned archives and licence.
+      for k in libcxx:libc++.a libunwind:libunwind.a; do
+        pin=$(sed -n "s/^raspi_cxxrt_${k%%:*}_sha256=//p" "$prov")
+        got=$(sed -n "s/^cxxrt_${k#*:}=//p" "$info")
+        [ -n "$pin" ] && [ "$got" = "$pin" ] ||
+          { echo "$info names ${k#*:} ${got:-none}, $prov pins ${pin:-none}" >&2; exit 1; }
+      done
+      [ "$(shasum -a 256 "$repo/packaging/licenses/llvm-runtime-LICENSE.TXT" | cut -d' ' -f1)" = "$(sed -n 's/^raspi_cxxrt_license_sha256=//p' "$prov")" ] ||
+        { echo "packaging/licenses/llvm-runtime-LICENSE.TXT is not the pinned LLVM runtime licence" >&2; exit 1; }
+      [ -f "$repo/packaging/svg-runtime-notice-$target.txt" ] ||
+        { echo "Missing packaging/svg-runtime-notice-$target.txt for the C++ runtime in the library" >&2; exit 1; }
+    fi
+  else
+    legacy=$(sed -n "s/^legacy=$dock_target $lib_sum //p" "$prov")
+    [ -n "$legacy" ] || {
+      echo "No BUILDINFO for $lib (sha256 $lib_sum), and it is not a pinned legacy library for $dock_target in $prov" >&2; exit 1; }
+    [ "$legacy" = "$svgrev" ] || {
+      echo "Pinned legacy library $lib_sum is revision $legacy, SVGICON_REVISION is $svgrev" >&2; exit 1; }
+    echo "Note: $lib is the pinned legacy library for $dock_target (no BUILDINFO); revision $legacy from $prov" >&2
+  fi
+  # Licence: the exact LICENSE of the pinned renderer commit, checked by its
+  # bytes and, when it sits in a checkout, by that checkout's commit; the
+  # MIT wording is checked separately so a wrong pin cannot pass silently.
+  [ -s "$svglicence" ] || { echo "SVGICON_LICENSE_FILE is missing or empty: $svglicence" >&2; exit 1; }
+  [ "$(shasum -a 256 "$svglicence" | cut -d' ' -f1)" = "$pin_licence" ] ||
+    { echo "SVGICON_LICENSE_FILE differs from the pinned LunaSVG licence text ($pin_licence): $svglicence" >&2; exit 1; }
+  licdir=$(dirname "$svglicence")
+  if git -C "$licdir" rev-parse --git-dir >/dev/null 2>&1; then
+    [ "$(git -C "$licdir" rev-parse HEAD)" = "$pin_commit" ] ||
+      { echo "$licdir is at $(git -C "$licdir" rev-parse HEAD), $prov pins $pin_commit" >&2; exit 1; }
+    [ -z "$(git -C "$licdir" status --porcelain -- LICENSE plutovg/LICENSE)" ] ||
+      { echo "LICENSE files in $licdir are modified" >&2; exit 1; }
+  fi
+  [ ! -f "$licdir/plutovg/LICENSE" ] || cmp -s "$svglicence" "$licdir/plutovg/LICENSE" ||
+    { echo "$licdir/plutovg/LICENSE differs from LunaSVG's: NOTICES would need both" >&2; exit 1; }
+  grep -q "Permission is hereby granted, free of charge" "$svglicence" ||
+    { echo "SVGICON_LICENSE_FILE is not MIT licence text: $svglicence" >&2; exit 1; }
+  [ -f "$repo/packaging/svg-notice.txt" ] || { echo "Missing packaging/svg-notice.txt" >&2; exit 1; }
+  grep -q "$pin_commit" "$repo/packaging/svg-notice.txt" ||
+    { echo "packaging/svg-notice.txt does not name the pinned LunaSVG commit $pin_commit" >&2; exit 1; }
+  # Shipped for users to choose as item icons.
+  [ -s "$repo/assets/runtime/folder.svg" ] || { echo "Missing assets/runtime/folder.svg" >&2; exit 1; }
+fi
 if [ "$dock_weather" = yes ]; then
   weather="$build/package/Widgets/org.aros.weather"
   [ -f "$weather/applet.json" ] && [ -f "$weather/assets/conditions.json" ] &&
@@ -54,12 +125,26 @@ variant() { # name svg(0|1)
   if [ -d "$build/package/Widgets" ]; then
     cp -R "$build/package/Widgets" "$app/Widgets"
     cp "$repo/docs/applets.md" "$app/Widgets-ReadMe.md"
+    # A target whose provider links other library versions than the PC
+    # packages adds its paragraph to the shared list here, before the
+    # licence sources; the PC packages keep the list as it is.
+    wlic="$repo/packaging/weather-licenses-$target.txt"
+    if [ -f "$wlic" ]; then
+      readme_w="$app/Widgets/org.aros.weather/licenses/README.txt"
+      [ -f "$readme_w" ] || { echo "Missing $readme_w for $wlic" >&2; exit 1; }
+      python3 -c 'import sys
+t=open(sys.argv[1]).read(); add=open(sys.argv[2]).read(); key="License texts were retrieved"
+if key not in t: sys.exit("no licence-source line in " + sys.argv[1])
+open(sys.argv[1],"w").write(t.replace(key, add + key, 1))' "$readme_w" "$wlic" || exit 1
+    fi
   fi
   cp "$work/icons/Dockbar.info" "$app/Dockbar.info"
   cp "$work/icons/drawer.info" "$root/Dockbar.info"
   cp "$work/icons/ReadMe.info" "$app/ReadMe.info"
   cp "$work/icons/ReadMe.info" "$app/NOTICES.info"
   cp "$work/icons/ReadMe.info" "$app/Changes.info"
+  cp "$repo/LICENSE" "$app/LICENSE"
+  cp "$work/icons/ReadMe.info" "$app/LICENSE.info"
   cp "$repo/packaging/Changes.txt" "$app/Changes"
   mkdir -p "$app/Examples"
   cp "$repo/packaging/Examples/ListFiles.script" "$app/Examples/"
@@ -69,6 +154,11 @@ variant() { # name svg(0|1)
     cp "$build/package/libs/svgicon.library" "$app/libs/"
     note="- SVG icons are drawn by libs/svgicon.library. Keep the libs and assets\n  drawers next to the program."
     notice=$(sed "s/@SVGREV@/$svgrev/" "$repo/packaging/svg-notice.txt"; cat "$svglicence")
+    # A library that links its own C++ runtime (Raspberry Pi: LLVM libc++,
+    # libc++abi, libunwind) carries that runtime's licence as well.
+    if [ -f "$repo/packaging/svg-runtime-notice-$target.txt" ]; then
+      notice=$(printf '%s\n\n' "$notice"; cat "$repo/packaging/svg-runtime-notice-$target.txt" "$repo/packaging/licenses/llvm-runtime-LICENSE.TXT")
+    fi
   else
     if [ "$svg" = 1 ]; then
       note="- This package has no SVG support. .svg icons are replaced by the\n  program's own .info icon. Use the other package for SVG."
@@ -85,6 +175,14 @@ variant() { # name svg(0|1)
   [ -f "$tested" ] || tested="$repo/packaging/tested-x86_64-abiv11.txt"
   fill "$work/readme1" @REQUIREMENTS@ "$(cat "$repo/packaging/requirements-$target.txt")" > "$work/readme2"
   fill "$work/readme2" @TESTED@ "$(cat "$tested")" > "$app/ReadMe"
+  # The ReadMe's Weather entry names the PC packages; the Pi package has
+  # Weather too. Only the Pi ReadMe changes, so the PC packages stay as built.
+  if [ "$target" = aarch64-raspi-v1 ]; then
+    python3 -c 'import sys
+t=open(sys.argv[1]).read(); old="- Weather (x86_64 package only):"
+if old not in t: sys.exit("ReadMe has no \"" + old + "\" line")
+open(sys.argv[1],"w").write(t.replace(old, "- Weather:", 1))' "$app/ReadMe" || exit 1
+  fi
   libs_text=$(cut -d'|' -f2 "$repo/packaging/build-$target.txt" | tail -1)
   fill "$repo/packaging/NOTICES.txt" @SVGNOTICE@ "$notice" | sed "s|@LIBS@|$libs_text|" > "$work/notices1"
   # A target without FreeType (libraries "-") has no Smooth text section.

@@ -58,7 +58,6 @@
 #include "version.h"
 #include "present.h"
 #include "alpha.h"
-#include "running.h"
 
 /* Version(1) reads this; keep the date in the AmigaOS dd.mm.yyyy form. */
 static const char version_tag[] __attribute__((used))="$VER: Dockbar " DOCK_VERSION " (" DOCK_DATE ")";
@@ -76,9 +75,7 @@ struct DockImage { DockNativeIcon native; unsigned char *svg; int size; unsigned
  * against one budget (see mag_budget_bytes). */
 #define DOCK_MAG_STEPS 16
 struct DockMag { struct DockImage source; unsigned char *step[DOCK_MAG_STEPS][2]; int size[DOCK_MAG_STEPS]; unsigned used[DOCK_MAG_STEPS][2]; };
-struct Visual { struct DockImage image, mini[4]; struct DockMag mag; struct DockSprite sprite; struct DockFade fade; int fade_pending; int applet_dx; uint64_t signature; int minis, use_minis; struct DockWidget widget; struct DockAppletRuntime *applet; char applet_icon[48];
- /* Running indicator of a program item (running.h). */
- struct DockRunTarget run_target; struct DockRunState run; };
+struct Visual { struct DockImage image, mini[4]; struct DockMag mag; struct DockSprite sprite; struct DockFade fade; int fade_pending; int applet_dx; uint64_t signature; int minis, use_minis; struct DockWidget widget; struct DockAppletRuntime *applet; char applet_icon[48]; };
 
 /* The window side of one dock. Index i belongs to app.set.docks[i]; any
  * change to the set closes and reopens every view. */
@@ -98,9 +95,6 @@ struct DockView {
  struct Visual visual[DOCK_MAX_ITEMS];
  DockDropTarget drop;
  int hover,pressed,dirty,corner,transparent;
- /* Running dots of a vertical dock sit at its side nearer the screen edge,
-  * chosen when it opens (a dock without a bar keeps its shape). */
- int run_left;
  /* hover, pressed and drop target as last drawn whole: an animation frame
   * redraws only the icon, which is right only while they are unchanged. */
  int drawn_marks;
@@ -188,7 +182,6 @@ struct App {
  /* The screen composes windows (present.h), unless --no-compose; and the
   * docks whose window was refused a surface on this screen (by index). */
  int compose_ok,no_compose,compose_refused[DOCK_MAX_DOCKS];
- int blur_ok;   /* composed docks get their glass from the compositor */
  char status[100]; unsigned status_until; int status_view;
  /* Quiet ports (no signal bit, see dock_quiet_port): the loop polls them. */
  struct MsgPort *input_port,*instance_port,*notify_port;
@@ -202,7 +195,7 @@ struct App {
  /* Wanderer rewrites this file when its wallpaper changes. */
  struct MsgPort *wall_port; struct NotifyRequest wall_note; int wall_active;
  FILE *log;
- const char *config,*legacy_config,*legacy_prefs,*pins,*svg_path;
+ const char *config,*legacy_config,*legacy_prefs,*pins;
 };
 /* Both are far too large for the small default AROS stack. */
 static struct App app;
@@ -230,10 +223,6 @@ static unsigned int milliseconds(void) {
  * picture seen on screen can be matched with what Dockbar did. --dump-frames N
  * also writes the first N finished pictures of the first dock to RAM:dbf/. */
 static int trace_present,dump_frames,dumped;
-/* Set while the fixed shape of a pictured dock without a bar is taken:
- * every dot counts as drawn, so a dot can come and go without a new shape
- * (where it is off, the dock shows its desktop picture). */
-static int running_all;
 /* Time spent handing finished pixels to the system (the pixel transfer and
  * what the compositor does for it), apart from composing them. */
 static uint64_t present_us;
@@ -902,12 +891,14 @@ static int take_visual(const struct DockItem *item,int size,struct Visual *vis) 
  return 0;
 }
 /* Where an item's picture comes from, and what to show when that fails.
- * SYS:Tools keeps 0.1's folder artwork; other drawers show their own icon.
- * A command shows its own icon, its script's, or the Shell's. A group's own
- * picture has no fallback (its children are previewed instead). */
+ * Only an icon the user chose (.info or .svg) replaces an item's own: drawers
+ * show their own icon, SYS:Tools included, so installing the SVG renderer
+ * never changes how the user's items look. A command shows its own icon,
+ * its script's, or the Shell's. A group's own picture has no fallback (its
+ * children are previewed instead). */
 static void picture_of(const struct DockItem *item,const char **path,const char **fallback) {
  if(item->kind==DOCK_GROUP){*path=item->icon;*fallback=NULL;return;}
- *path=item->icon[0]?item->icon:item->kind==DOCK_DRAWER && !strcasecmp(item->path,"SYS:Tools")?app.svg_path:
+ *path=item->icon[0]?item->icon:
   item->kind==DOCK_COMMAND?(item->run&DOCK_RUN_SCRIPT?item->path:"SYS:System/Shell"):item->path;
  *fallback=item->kind==DOCK_COMMAND?"SYS:System/Shell":item->path;
 }
@@ -953,34 +944,18 @@ static void compose_luminance(int index) {
  note("COMPOSE dock=%d luminance=%d at=%d,%d pixels=%lu",app.set.docks[index].id,v->lum,x,y,(unsigned long)got);
 }
 /* The outline of an ordinary (pictured) dock window: rounded for a bar;
- * without a bar what it can draw, in either state of its icons and with or
- * without its running dots, fixed while the dock is open. */
+ * without a bar what it can draw, in either state of its icons, fixed while
+ * the dock is open. */
 static struct Region *pictured_shape(int index) {
  struct DockView *v=&app.views[index];
  if(!v->nobg)return dock_shape(v->ww,v->wh,v->corner);
  int n=v->ww*v->wh;
  v->extra=0;
  render_view(index);memcpy(v->mask_shown,v->mask,(size_t)n);
- app.all_selected=1;running_all=1;render_view(index);app.all_selected=0;running_all=0;
+ app.all_selected=1;render_view(index);app.all_selected=0;
  for(int k=0;k<n;k++)if(v->mask[k]!=v->mask_shown[k]){v->mask_shown[k]=1;v->extra++;}
  if(v->extra)note("NOBG dock=%d %d pixels only in one state (icon or button)",app.set.docks[index].id,v->extra);
  return mask_region(v,v->mask_shown);
-}
-/* The programs of a dock with running indicators, ready for the scans: an
- * own lock on each drawer, copied and released at once. Only items in the
- * dock itself, not in its groups. */
-static int running_due;
-static void running_targets(int index) {
- struct DockView *v=&app.views[index];const struct DockModel *m=model_of(index);int n=0,usable=0;
- if(!v->look.running)return;
- for(int i=0;i<m->count;i++){
-  if(m->items[i].kind!=DOCK_APP)continue;
-  struct DockRunTarget *t=&v->visual[i].run_target;
-  dock_running_target(t,m->items[i].path);n++;usable+=t->usable;
-  if(!t->usable)note("RUNNING dock=%d item=%d no dot: drawer of %s gives no lock to compare",app.set.docks[index].id,i,m->items[i].path);
- }
- note("RUNNING dock=%d programs=%d comparable=%d",app.set.docks[index].id,n,usable);
- running_due=1;
 }
 static int prepare_view(int index) {
  struct DockView *v=&app.views[index];struct DockInstance *d=&app.set.docks[index];
@@ -1011,8 +986,6 @@ static int prepare_view(int index) {
  }
  dock_place_resolve(&d->place,app.screen->Width,app.screen->Height,screen_top(),v->ww,v->wh,&x,&y);
  v->x=x;v->y=y;
- v->run_left=x+v->ww/2<app.screen->Width/2;
- running_targets(index);
  size_t bytes=(size_t)v->ww*v->wh*4;
  /* A composed dock never holds a picture of the desktop (uncompose makes
   * one when it has to become pictured). */
@@ -1113,12 +1086,8 @@ static int open_window(int index) {
    * repaint from v->pixels on IDCMP_REFRESHWINDOW. */
   {WA_SimpleRefresh,TRUE},
   {WA_IDCMP,IDCMP_MOUSEMOVE|IDCMP_MOUSEBUTTONS|IDCMP_RAWKEY|IDCMP_REFRESHWINDOW|IDCMP_INACTIVEWINDOW|IDCMP_CHANGEWINDOW},{TAG_DONE,0}};
- /* Frosted glass of a composed dock: the compositor blurs what lies behind
-  * the bar, as the pictured glass blurs its desktop picture (radius 5,
-  * twice, see blur()). */
- int glass=v->compose && app.blur_ok && !v->nobg && v->look.glass && v->look.transparency>0;
- v->window=dock_present_open(v->compose,glass?5:0,tags);
- if(trace_present)note("WIN open dock=%d %p composed=%d glass=%d",app.set.docks[index].id,(void*)v->window,dock_present_composed(v->window),glass);
+ v->window=dock_present_open(v->compose,tags);
+ if(trace_present)note("WIN open dock=%d %p composed=%d",app.set.docks[index].id,(void*)v->window,dock_present_composed(v->window));
  if(v->window && v->compose && !dock_present_composed(v->window)){
   /* No surface for it (memory, the screen's budget): the dock is pictured
    * instead, on this screen. */
@@ -1126,7 +1095,7 @@ static int open_window(int index) {
   CloseWindow(v->window);v->window=NULL;
   uncompose(index);
   tags[0].ti_Data=(IPTR)v->shape;
-  v->window=dock_present_open(0,0,tags);
+  v->window=dock_present_open(0,tags);
  }
  return v->window && dock_drop_open(&v->drop,v->window);
 }
@@ -1693,26 +1662,6 @@ static int marks_of(int index) {
 /* Everything a dock shows, composed in v->pixels (and v->mask without a
  * bar); no window needed. Colours come only from v->c, highlight boxes only
  * from the layout's highlight rectangles. */
-/* Running indicators: a small dot in the text colour, so it follows the
- * style. Under the icon; beside it when a caption is under the icon; in a
- * vertical dock at its side, towards the screen edge the dock is nearer
- * to. s is the slot as drawn (scrolled). */
-#define RUN_DOT 4
-static struct DockRect running_box(const struct DockView *v,const struct DockSlot *s) {
- struct DockRect r={0,0,RUN_DOT,RUN_DOT};
- if(v->layout.orientation){
-  r.x=v->run_left?s->slot.x+1:s->slot.x+s->slot.w-RUN_DOT-1;r.y=s->icon.y+s->icon.h/2-RUN_DOT/2;
- } else if(s->label.w || (s->text.w && s->text.y>=s->icon.y+s->icon.h)){
-  r.x=s->icon.x-RUN_DOT-2;if(r.x<s->slot.x+1)r.x=s->slot.x+1;r.y=s->icon.y+s->icon.h/2-RUN_DOT/2;
- } else {
-  r.x=s->icon.x+s->icon.w/2-RUN_DOT/2;r.y=s->icon.y+s->icon.h+1;
-  if(r.y>s->slot.y+s->slot.h-RUN_DOT-1)r.y=s->slot.y+s->slot.h-RUN_DOT-1;
- }
- return r;
-}
-static int running_item(const struct DockView *v,const struct DockItem *item,const struct DockSlot *s) {
- return v->look.running && item->kind==DOCK_APP && s->icon.w;
-}
 static void render_view(int index) {
  struct DockView *v=&app.views[index];struct DockModel *m=model_of(index);struct DockLayout *l=&v->layout;
  int dx=l->orientation?0:-v->scroll,dy=l->orientation?-v->scroll:0,th=app.font->tf_YSize;
@@ -1808,9 +1757,6 @@ static void render_view(int index) {
    unsigned char *a=grow?mag_picture(&vis->mag,s->icon.w,grow,sel,&size):NULL;
    if(a)put_argb(v,a,size,at.x+(at.w-size)/2,at.y+(at.h-size)/2);
    else put_image(v,&vis->image,at.x+(at.w-vis->image.size)/2,at.y+(at.h-vis->image.size)/2,sel);
-  }
-  if(running_item(v,item,s) && (vis->run.shown || running_all)){
-   struct DockRect r=running_box(v,s);box(v,r.x,r.y,r.w,r.h,2,v->c->text);
   }
   if(s->text.w){
    char caption[DOCK_LABEL+4];item_caption(item,caption,sizeof caption);
@@ -1966,38 +1912,6 @@ static void hover_changed(int index,int now) {
  if(b.w)mark_rect(index,b);
  if(!v->part_dirty)v->hover_part=0;   /* neither had a box: nothing to draw */
  if(!v->part_dirty)v->drawn_marks=marks_of(index);
-}
-/* Every 2 s, while an open dock shows running indicators: one scan of the
- * processes (running.h), and only the dots that changed drawn again. */
-static void running_poll(void) {
- static struct DockRunProcess seen[160];static unsigned last;
- unsigned now=milliseconds();
- if(!running_due && now-last<2000u)return;
- int want=0;
- for(int i=0;i<app.set.count && !want;i++)if(app.views[i].window && app.views[i].look.running)
-  for(int k=0;k<model_of(i)->count && !want;k++)want=app.views[i].visual[k].run_target.usable;
- running_due=0;last=now;
- if(!want)return;
- uint64_t t0=dock_applets_now_us();
- int count=dock_running_scan(seen,(int)(sizeof seen/sizeof *seen));
- if(trace_present)note("RUNNING scan processes=%d took=%lu us",count,(unsigned long)(dock_applets_now_us()-t0));
- for(int i=0;i<app.set.count;i++){
-  struct DockView *v=&app.views[i];const struct DockModel *m=model_of(i);
-  if(!v->window || !v->look.running)continue;
-  for(int k=0;k<m->count;k++){
-   struct Visual *vis=&v->visual[k];
-   if(!vis->run_target.usable)continue;
-   if(!dock_running_step(&vis->run,dock_running_match(&vis->run_target,seen,count)))continue;
-   note("RUNNING dock=%d item=%d %s %s",app.set.docks[i].id,k,m->items[k].path,vis->run.shown?"on":"off");
-   /* A resize draws everything anyway; a slot scrolled out of the window
-    * gets its dot when it is drawn again. */
-   if(v->resizing){v->dirty=1;continue;}
-   if(!slot_visible(v,k))continue;
-   struct DockSlot s=v->layout.slots[k];
-   dock_layout_shift(&s,v->layout.orientation?0:-v->scroll,v->layout.orientation?-v->scroll:0);
-   mark_rect(i,running_box(v,&s));
-  }
- }
 }
 static void mark_part(int index,int item) {
  struct DockView *v=&app.views[index];struct DockSlot s=v->layout.slots[item];
@@ -2540,10 +2454,8 @@ static void open_prefs(int view) {
  /* Docks added in Preferences open composed where the screen composes. */
  {int all=1;for(int i=0;i<DOCK_MAX_DOCKS;i++){
    int c=i<app.set.count?(app.views[i].window?app.views[i].compose:app.compose_ok && !app.compose_refused[i]):app.compose_ok;
-   /* With the compositor's blur a composed dock has glass of its own */
-   if(app.blur_ok)c=0;
    dock_prefs_window_composed[i]=(unsigned char)c;if(i<app.set.count && !c)all=0;}
-  dock_prefs_window_all_composed=all && app.compose_ok && !app.blur_ok;}
+  dock_prefs_window_all_composed=all && app.compose_ok;}
  int opened=dock_prefs_window_open(&app.prefs,app.screen,&app.set,view,-1,-1);
  unlock_screen();
  if(opened){prefs_original=app.set;prefs_applied=0;}
@@ -3112,10 +3024,9 @@ static int attach_screen(void) {
  app.screen=screen;app.font=screen->RastPort.Font;app.screen_gen++;
  /* Asked again for every screen: a new mode may compose or not. */
  app.compose_ok=!app.no_compose && dock_present_can_compose(screen);
- app.blur_ok=app.compose_ok && dock_present_can_blur(screen);
  memset(app.compose_refused,0,sizeof app.compose_refused);
- note("COMPOSE screen depth=%d can_compose=%d blur=%d (%s%s)",(int)GetBitMapAttr(screen->RastPort.BitMap,BMA_DEPTH),app.compose_ok,
-  app.blur_ok,dock_present_build_name(),app.no_compose?", off by --no-compose":"");
+ note("COMPOSE screen depth=%d can_compose=%d (%s%s)",(int)GetBitMapAttr(screen->RastPort.BitMap,BMA_DEPTH),app.compose_ok,
+  dock_present_build_name(),app.no_compose?", off by --no-compose":"");
  int opened=get_screen_things(screen)?open_all():0;
  app.attaches++;
  note("SCREEN attach width=%d height=%d docks=%d opened=%d count=%d gen=%u signals=%d",screen->Width,screen->Height,app.set.count,opened,app.attaches,app.screen_gen,free_signals());
@@ -3213,7 +3124,7 @@ static int object_exists(const char *path) {
 }
 static int usage(void) {
  puts("Dockbar " DOCK_VERSION " [--icon-size 32..72] [--corner 0..8] [--seconds N] [--log PATH] [--config PATH]"
-      " [--legacy-config PATH] [--legacy-prefs PATH] [--pins PATH] [--svg PATH] [--svg-library PATH] [--widgets PATH] [--widget-state PATH] [--no-transitions] [--log-entries] [--reopen-on-resize] [--full-redraw] [--no-compose]");
+      " [--legacy-config PATH] [--legacy-prefs PATH] [--pins PATH] [--svg-library PATH] [--widgets PATH] [--widget-state PATH] [--no-transitions] [--log-entries] [--reopen-on-resize] [--full-redraw] [--no-compose]");
  return 20;
 }
 /* A widget instance still shown or edited somewhere is not freed, whatever
@@ -3226,10 +3137,10 @@ static int widget_in_use(const struct DockAppletRuntime *r) {
  return 0;
 }
 int main(int argc,char **argv) {
- int seconds=0;const char *logpath=NULL,*library="PROGDIR:libs/svgicon.library",*applets="PROGDIR:Widgets",*applet_state="PROGDIR:WidgetState";int widgets_given=0,state_given=0;
+ int seconds=0,old_svg=0;const char *logpath=NULL,*library="PROGDIR:libs/svgicon.library",*applets="PROGDIR:Widgets",*applet_state="PROGDIR:WidgetState";int widgets_given=0,state_given=0;
  dock_applet_ui_editable=widget_editable;app.smooth_asked=-1;dock_drag_state_init(&app.drag);
  app.config="PROGDIR:docks.config";app.legacy_config="PROGDIR:dock.config";app.legacy_prefs="PROGDIR:dock.prefs";
- app.pins="PROGDIR:dock.pins";app.svg_path="PROGDIR:assets/folder.svg";app.cli_corner=-1;
+ app.pins="PROGDIR:dock.pins";app.cli_corner=-1;
  app.panel_view=app.menu_view=-1;
  app.pen_text[0]=app.pen_text[1]=app.pen_muted[0]=app.pen_muted[1]=app.pen_white=-1;
  for(int i=1;i<argc;i++){
@@ -3248,11 +3159,17 @@ int main(int argc,char **argv) {
   else if(!strcmp(argv[i],"--legacy-prefs") && i+1<argc)app.legacy_prefs=argv[++i];
   else if(!strcmp(argv[i],"--pins") && i+1<argc)app.pins=argv[++i];
   else if(!strcmp(argv[i],"--no-transitions"))dock_transitions_enabled=0;
-  else if(!strcmp(argv[i],"--svg") && i+1<argc)app.svg_path=argv[++i];
   else if((!strcmp(argv[i],"--widgets") || !strcmp(argv[i],"--applets")) && i+1<argc){applets=argv[++i];widgets_given=1;}
   else if((!strcmp(argv[i],"--widget-state") || !strcmp(argv[i],"--applet-state")) && i+1<argc){applet_state=argv[++i];state_given=1;}
   else if(!strcmp(argv[i],"--svg-library") && i+1<argc)library=argv[++i];
-  else return usage();
+  /* Removed in 0.5-test13 (it only replaced the Tools drawer's own icon).
+   * Start lines written for older versions still start the dock. */
+  else if(!strcmp(argv[i],"--svg")){if(i+1<argc)i++;old_svg=1;
+   puts("Dockbar: --svg is no longer used and is ignored; remove it from the start line.");
+   /* Mainline before 2026-09-24 drops unflushed output to a redirected
+    * file, and the dock runs on for a long time after this. */
+   fflush(stdout);}
+  else{printf("Dockbar: unknown option %s\n",argv[i]);return usage();}
  }
  /* Started from Wanderer: options come from the icon's tool types. */
  static char wb_log[DOCK_PATH];
@@ -3304,10 +3221,12 @@ int main(int argc,char **argv) {
  struct Screen *first_screen=NULL;
  if(ok){
   note("START version=%s icon.library=%u.%u intuition=%u.%u",DOCK_VERSION,IconBase->lib_Version,IconBase->lib_Revision,IntuitionBase->LibNode.lib_Version,IntuitionBase->LibNode.lib_Revision);
+  if(old_svg)note("OPTION --svg ignored (no longer used)");
   app.input_port=dock_quiet_port();
   if(app.input_port)app.input_request=(struct IOStdReq*)CreateIORequest(app.input_port,sizeof(struct IOStdReq));
   if(app.input_request && !OpenDevice((CONST_STRPTR)"input.device",0,(struct IORequest*)app.input_request,0))InputBase=app.input_request->io_Device;
   note("SVG available=%d",dock_svg_open(library));
+  if(!dock_elapsed_exact())note("TIME timer.device not available: elapsed time follows the calendar clock, steps over 10 s are not counted");
   /* Started from S:User-Startup the Workbench screen is not open yet; this
    * opens it, before our subscription could make that wait for ourselves
    * (see lock_open_screen). Held until the docks are open on it. */
@@ -3471,7 +3390,6 @@ int main(int argc,char **argv) {
   
   if(!app.editor.window && !app.prefs.window && !app.menu.window && !dock_applet_ui_window())pointer_update(app.screen->MouseX,app.screen->MouseY,left_down);
   else under_view=-1;
-  running_poll();
   /* Hover effects hold still during a foreign drag, as all drawing does
    * (see pointer_update); afterwards they go on from where they were. */
   if(!hold_drawing()){unsigned now_ms=milliseconds();for(int i=0;i<app.set.count;i++)if(effects_step(i,now_ms))animating=1;}

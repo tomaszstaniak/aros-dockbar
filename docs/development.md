@@ -62,6 +62,18 @@ one with the SVG renderer and one `.info`-only, plus `SHA256SUMS`. Each holds a
 SVG variant needs `SVGICON_REVISION` (the renderer's source commit) and
 `SVGICON_LICENSE_FILE` (its LunaSVG licence); `DOCK_SVG=0` builds only the
 `.info`-only archive. Timestamps are fixed, so equal inputs give equal archives.
+`DOCK_DIST_DIR` puts the archives elsewhere than `dist/` (for candidates).
+
+The SVG variant is refused unless the library's provenance checks out:
+- its `BUILDINFO` (written by aros-svg-icons next to the library and kept by
+  `scripts/build.sh`) names this target, `SVGICON_REVISION`, the LunaSVG commit
+  pinned in `packaging/svg-provenance.txt`, no test variant, and the library's
+  checksum; a library without `BUILDINFO` is accepted only when its checksum,
+  target and revision are a `legacy=` line of that file (today: the ABIv11
+  library shipped in 0.5-test3 to 0.5-test12);
+- `SVGICON_LICENSE_FILE` has the pinned checksum, sits in a LunaSVG checkout at
+  the pinned commit when it is one, equals PlutoVG's licence there, and is MIT
+  text; `packaging/svg-notice.txt` names the pinned commit.
 
 ## Running and controls
 
@@ -120,7 +132,6 @@ There is no Delete-key binding.
 | `--log-entries` | off | With `--log`: list a drawer panel's entries when it closes |
 | `--config PATH` | `PROGDIR:dock.config` | Complete versioned composition and dock position |
 | `--pins PATH` | `PROGDIR:dock.pins` | Legacy pin file imported only when configuration is missing |
-| `--svg PATH` | `PROGDIR:assets/folder.svg` | Default folder imagery for Tools and groups |
 | `--svg-library PATH` | `PROGDIR:libs/svgicon.library` | Explicit renderer library path |
 | `--corner N` | from `dock.prefs`, else `5` | Corner radius 0–8 px for this run only; 0 gives square corners |
 | `--prefs PATH` | `PROGDIR:dock.prefs` | Preferences file written by the Preferences window |

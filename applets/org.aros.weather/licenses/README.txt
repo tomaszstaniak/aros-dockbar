@@ -4,7 +4,7 @@ ones depend on the package:
 x86_64-abiv11 (ABIv11 2026.09 SDK): libcurl 7.76.0 (curl.txt), OpenSSL
 1.1.0h (openssl.txt), Zstandard 1.5.7 (zstd.txt) and zlib 1.3.1 (zlib.txt).
 
-x86_64-v1 (mainline AROS SDK and contrib of 2026-10-26): libcurl 8.21.0
+x86_64-v1 (mainline AROS contrib of 2026-10-26): libcurl 8.21.0
 (curl-8.21.0.txt), OpenSSL 4.0.1 (openssl-4.0.1.txt, Apache License 2.0),
 Brotli 1.1.0 decoder (brotli.txt), Zstandard 1.5.7 (zstd.txt) and zlib
 1.3.1 (zlib.txt).

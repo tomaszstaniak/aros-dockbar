@@ -83,4 +83,15 @@ and 128 pixels with transparent corners and partially transparent edge pixels.
 Separate native application checks confirmed the folder icon at48/64px, constant
 render count during ordinary redraws, and native fallback for missing/invalid SVG
 or library. See [development verification](development.md#checks-and-current-scope).
-No performance benchmark or mainline ABIv1 support is claimed.
+No performance benchmark is claimed.
+
+Mainline (x86_64-v1): aros-svg-icons builds a separate `svgicon.library` for
+mainline (`scripts/build-svgiconlib.sh v1`), with the mainline compiler, SDK and
+genmodule. `scripts/build.sh` and `scripts/package.sh` refuse a library or
+generated headers built for the other ABI (the library's C runtime bases and the
+`BUILDINFO` written next to it tell them apart), a mainline library without
+libgcc's register size table, and a library whose `BUILDINFO` revision differs
+from `SVGICON_REVISION`. Packaging also checks the renderer's provenance against
+`packaging/svg-provenance.txt` (see development.md, "Tester archives"). That the
+mainline library's C++ exceptions are caught at run time is checked by a
+developer probe in aros-svg-icons (`tests/exctest/`), not by these scripts.

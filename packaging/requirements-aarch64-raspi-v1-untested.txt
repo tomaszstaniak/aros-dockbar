@@ -1,9 +1,0 @@
-AROS for Raspberry Pi (aarch64, mainline ABIv1).
-THIS BUILD HAS NOT BEEN RUN, on a Raspberry Pi or anywhere else. It was
-only compiled and linked, with the AROS raspi-aarch64 SDK of 2026-08-22.
-Nothing in it is known to work on the Pi; if it does not start or
-misbehaves, that is expected and a report is very welcome. The rest of
-this ReadMe describes the x86_64 version, which was tested under QEMU.
-There are no SVG icons in this build (no SVG library exists for this
-target yet).
-This build has no Weather (no Weather provider exists for this target).

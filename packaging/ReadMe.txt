@@ -1,12 +1,9 @@
-Dockbar @VERSION@ - test release
-================================
+Dockbar @VERSION@
+===========
 
 An Amiga-style dock for AROS: application launchers, icon groups, drawers,
 separators, spaces and clocks in one or more movable bars, horizontal or
 vertical.
-
-This is a test release for testers. It is not a final version. Please report
-what works and what does not.
 
 Requirements
 ------------
@@ -37,6 +34,10 @@ desktop never appear. Started this way, Dockbar shows its docks before
 the desktop icons appear; drawer items and dropped icons work once
 Wanderer is up. To log such a start, add --log RAM:dockbar.log at the
 end of the Run line.
+
+A start line written for an older version may still have --svg and a
+file name: that option is no longer used. Dockbar ignores both and starts
+as usual; remove them from the line when convenient.
 
 Using a dock
 ------------
@@ -172,9 +173,9 @@ removes that dock and its shortcuts only. The line above the buttons
 says what the shown page is for.
 
 Defaults for all docks: Colours (Dark, Light, Automatic), Background
-(Bar, None), Transparency %, Frosted glass, Grip (Shown, Hidden), Text,
-Hover effect and Running indicators (Off, On). Every dock whose setting
-is "Inherit" uses these values.
+(Bar, None), Transparency %, Frosted glass, Grip (Shown, Hidden), Text
+and Hover effect. Every dock whose setting is "Inherit" uses these
+values.
 
 A dock has four tabs:
 
@@ -202,8 +203,7 @@ A dock has four tabs:
 - Appearance: Colours, Background, Transparency % and Frosted glass,
   each either "Inherit" (the value from the defaults, shown in brackets,
   for example "Inherit (Bar)") or this dock's own value; Corner radius;
-  Hover effect (Inherit, None, Lift, Magnify, see "Hover effect" below);
-  Running indicators (Inherit, Off, On, see "Running indicators" below).
+  Hover effect (Inherit, None, Lift, Magnify, see "Hover effect" below).
   Transparency, Frosted glass and Hover effect are not available while
   the dock has no background. See "Colours and backgrounds" below.
 - Behaviour:
@@ -236,22 +236,6 @@ of Dockbar is open, icons stay at rest. Docks without a bar show no hover
 effect for now; the setting is kept for when the dock gets its bar back.
 New configurations start with Lift; settings from earlier versions keep
 None until you choose otherwise.
-
-Running indicators (off unless you turn them on): a small dot under the
-icon of each program in the dock that is running, whether it was started
-from the dock, from Wanderer or from a Shell. In a vertical dock the dot
-is beside the icon, on the side nearer the screen edge. It appears within
-about two seconds of the start and goes within about four seconds of the
-end. Clicking works as before.
-- Only programs placed in the dock itself are marked, not those in its
-  groups, and only when Dockbar can tell that it is exactly that program
-  file: a copy with the same name in another drawer gets its own dot.
-- Programs on FAT volumes get no dot (that file system does not let
-  Dockbar tell drawers apart), and neither do commands built into the
-  Shell or programs that hand over to another program and end.
-- On a dock without a bar (not with real transparency), the place of each
-  dot belongs to the dock even while no dot is shown: it shows the desktop
-  as Dockbar last saw it, and a click there starts the program.
 
 Text (one setting for all docks, under Defaults for all docks):
 - System (the default): the screen font, drawn exactly as the system
@@ -325,8 +309,8 @@ Preferences, for example to unlock a dock.
 
 See-through backgrounds
 -----------------------
-On mainline AROS (the x86_64-v1 package) with a 32-bit screen whose
-display composes windows, see-through docks are truly transparent: the
+On mainline AROS (the aros-x86_64-abiv1-pc package) with a 32-bit
+screen whose display composes windows, see-through docks are truly transparent: the
 desktop and any window behind a dock show through it as they change, and
 the dock never disappears to take a picture. Icons and text stay fully
 opaque, and the rounded corners and the edges of docks without a bar are
@@ -398,8 +382,8 @@ and a clock, with automatic colours.
 To start again with the default dock, quit Dockbar and delete
 docks.config (and, if they are there, dock.config and dock.prefs).
 
-Known limitations of this test release
---------------------------------------
+Known limitations
+-----------------
 - Up to 8 docks. Groups cannot contain other groups; up to 8 groups per
   dock, 24 icons in a dock and in each group.
 - The dock does not show running programs.
@@ -414,6 +398,18 @@ Known limitations of this test release
   The cause is in the system's display composition, which is fixed from
   gfx.hidd 45.32. When memory is short the system composes the old way,
   and the blinking can come back.
+- Composited docks can be invisible with the VMware SVGA driver,
+  reproduced in QEMU with -vga vmware, while their names still pop up
+  under the pointer. A similar symptom was reported in VirtualBox; its
+  graphics configuration is not yet confirmed. Use --no-compose as a
+  workaround (add it at the end of the Run line in S:User-Startup, see
+  Installation); see-through docks then show a picture of the desktop
+  instead. Fixed upstream in commit f9bd1b71 (graphics.library 45.24).
+  Verified with VMware SVGA under QEMU. VirtualBox confirmation is
+  pending.
+- On mainline AROS without the fix proposed in AROS pull request 2028, a
+  failed memory allocation or Avail FLUSH can damage system memory, with
+  or without Dockbar: for example volumes that can no longer be found.
 - The wallpaper is followed only for Wanderer (its prefs file
   ENV:SYS/Wanderer/global.prefs).
 - Automatic colours and docks without a bar look at the desktop behind
@@ -429,6 +425,7 @@ Known limitations of this test release
 
 Licence
 -------
-The licence of Dockbar itself is not decided yet (MIT is proposed). This is
-a test build for evaluation. NOTICES lists the parts it contains and their
-origin.
+Dockbar's own code, icons and SVG files are under the MIT licence; the text
+is in LICENSE. The package also contains parts under their own terms (the
+SVG renderer, the Weather widget's libraries, certificates and pictures,
+Tabler icons): NOTICES lists each part, its origin and its licence.

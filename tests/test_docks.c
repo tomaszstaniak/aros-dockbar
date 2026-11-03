@@ -163,7 +163,7 @@ static void version2_keeps_its_look(void)
     FILE *f = fopen(path, "rb");
     char head[64] = "";
     assert(f && fgets(head, sizeof head, f) && !fclose(f));
-    assert(!strncmp(head, "DOCKBAR\t10\t", 11));
+    assert(!strncmp(head, "DOCKBAR\t9\t", 10));
     assert(dock_set_load(&loaded, path) == 1 && !memcmp(&loaded, &set, sizeof set));
 
     /* Inherit and "no background" are different values: changing the default
@@ -332,11 +332,11 @@ static void hover_effect_setting(void)
     assert(a.hover == DOCK_HOVER_LIFT);
     dock_appearance_of(&r, 1, &a);
     assert(a.hover == DOCK_HOVER_MAGNIFY);
-    /* The file carries the new fields. */
+    /* The file says version 9 and carries the new fields. */
     FILE *f = fopen(path, "rb");
     char line[256];
-    assert(f && fgets(line, sizeof line, f) && !strncmp(line, "DOCKBAR\t10\t", 11));
-    assert(fgets(line, sizeof line, f) && !strcmp(line, "DEFAULTS\t2\t0\t0\t0\t1\t0\t1\t0\n"));
+    assert(f && fgets(line, sizeof line, f) && !strncmp(line, "DOCKBAR\t9\t", 10));
+    assert(fgets(line, sizeof line, f) && !strcmp(line, "DEFAULTS\t2\t0\t0\t0\t1\t0\t1\n"));
     fclose(f);
     bad = s;
     bad.defaults.hover = 3;
@@ -350,50 +350,8 @@ static void hover_effect_setting(void)
     put(path, "DOCKBAR\t9\t2\nDEFAULTS\t2\t0\t0\t0\t1\t0\t7\nDOCK\t1\tA\nLOOK\t40\t5\t0\t1\t0\t-1\t-1\t-1\t-1\t-1\t0\t0\t0\t-1\n"
              "PLACE\t2\t1\t8\t0\t0\t0\t0\nROOT\t0\nENDDOCK\nEND\n");
     assert(dock_set_load(&r, path) == -1);
-    put(path, "DOCKBAR\t11\t2\nEND\n");
+    put(path, "DOCKBAR\t10\t2\nEND\n");
     assert(dock_set_load(&r, path) == -1);  /* a later version is left alone */
-    remove(path);
-}
-
-/* Running indicators: off by default and for every file written before
- * version 10 (docks inheriting it); own values per dock round-trip; only
- * 0 and 1 (and Inherit for a dock) are accepted. */
-static void running_setting(void)
-{
-    static struct DockSet s, r, bad;
-    struct DockAppearance a;
-    dock_appearance_default(&a);
-    assert(a.running == 0);
-    put(path, "DOCKBAR\t9\t2\nDEFAULTS\t2\t0\t0\t0\t1\t0\t1\nDOCK\t1\tA\nLOOK\t40\t5\t0\t1\t0\t-1\t-1\t-1\t-1\t-1\t0\t0\t0\t-1\n"
-             "PLACE\t2\t1\t8\t0\t0\t0\t0\nROOT\t0\nENDDOCK\nEND\n");
-    assert(dock_set_load(&s, path) == 1);
-    assert(s.defaults.running == 0 && s.docks[0].look.running == DOCK_INHERIT);
-    int b = dock_set_add(&s, "Side");
-    assert(b == 1 && s.docks[b].look.running == DOCK_INHERIT);
-    s.defaults.running = 1;
-    s.docks[b].look.running = 0;
-    assert(dock_set_save(&s, path) == 1);
-    assert(dock_set_load(&r, path) == 1 && !memcmp(&r, &s, sizeof r));
-    dock_appearance_of(&r, 0, &a);
-    assert(a.running == 1);
-    dock_appearance_of(&r, 1, &a);
-    assert(a.running == 0);
-    bad = s;
-    bad.defaults.running = 2;
-    assert(!dock_set_valid(&bad));
-    bad = s;
-    bad.defaults.running = DOCK_INHERIT;
-    assert(!dock_set_valid(&bad));
-    bad = s;
-    bad.docks[0].look.running = 2;
-    assert(!dock_set_valid(&bad));
-    put(path, "DOCKBAR\t10\t2\nDEFAULTS\t2\t0\t0\t0\t1\t0\t1\t3\nDOCK\t1\tA\nLOOK\t40\t5\t0\t1\t0\t-1\t-1\t-1\t-1\t-1\t0\t0\t0\t-1\t-1\n"
-             "PLACE\t2\t1\t8\t0\t0\t0\t0\nROOT\t0\nENDDOCK\nEND\n");
-    assert(dock_set_load(&r, path) == -1);
-    /* A version 10 file without the new field is damaged, not old. */
-    put(path, "DOCKBAR\t10\t2\nDEFAULTS\t2\t0\t0\t0\t1\t0\t1\nDOCK\t1\tA\nLOOK\t40\t5\t0\t1\t0\t-1\t-1\t-1\t-1\t-1\t0\t0\t0\t-1\n"
-             "PLACE\t2\t1\t8\t0\t0\t0\t0\nROOT\t0\nENDDOCK\nEND\n");
-    assert(dock_set_load(&r, path) == -1);
     remove(path);
 }
 
@@ -411,7 +369,6 @@ int main(int argc, char **argv)
     placement_stays_on_screen();
     version2_keeps_its_look();
     hover_effect_setting();
-    running_setting();
-    puts("PASS docks: 0.1 migration, 0.2 files keep their look, inherit vs own values, independent docks, cross-dock moves, create/duplicate/remove, damaged files kept, placement, hover effect, running indicators");
+    puts("PASS docks: 0.1 migration, 0.2 files keep their look, inherit vs own values, independent docks, cross-dock moves, create/duplicate/remove, damaged files kept, placement, hover effect");
     return 0;
 }

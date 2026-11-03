@@ -1,6 +1,55 @@
 Dockbar changes
 ===============
 
+0.5
+---
+- The first version of the 0.5 series that is not a test version. It adds
+  no new features to 0.5-test14 and brings all packages to one source.
+- ReadMe: the note on the VMware SVGA driver says what was reproduced and
+  where AROS fixes it. A new note describes memory damage after a failed
+  allocation on mainline AROS, which happens with or without Dockbar.
+
+0.5-test14
+----------
+- Fixed: when the system time was set back while Dockbar was running
+  (by Prefs/Time, a time server or SetClock), Weather stopped updating
+  for as long as the clock had been set back, and an update in progress
+  could be cancelled. Timeouts, refreshes, animations, hover and drags
+  now count time that only goes forwards; the clock and the forecast
+  still show the time you set.
+- Packages are now named after the system they are for, for example
+  Dockbar-0.5-test14-aros-x86_64-abiv1-pc-info-only.zip for AROS x86_64
+  mainline.
+- ReadMe: on some graphics drivers, for example VMware SVGA in virtual
+  machines, docks stay invisible on mainline AROS; start Dockbar with
+  --no-compose there.
+
+0.5-test13
+----------
+- The package for AROS x86_64 mainline (x86_64-v1) now draws SVG icons:
+  it includes libs/svgicon.library, built for mainline. The package
+  without SVG support is still available.
+- Items show their own icon unless you choose another one. In the
+  package with SVG support the Tools drawer no longer shows Dockbar's
+  folder picture; it shows the icon of SYS:Tools, as in the package
+  without SVG support. The folder, terminal and compass pictures stay in
+  the assets drawer for you to choose (Edit, Icon).
+- The --svg option is gone (it only changed that Tools picture). A start
+  line that still has it, for example in S:User-Startup, keeps working:
+  Dockbar ignores the option and its file name and says so. Remove it
+  from the line when convenient. To keep the folder picture on Tools,
+  choose assets/folder.svg as its icon (Edit, Icon).
+- Started with an option it does not know, Dockbar now names that
+  option before listing the valid ones. As before, it does not start.
+- When libs/svgicon.library is missing or cannot be opened, items with an
+  SVG icon show their program's or drawer's own icon instead (a group
+  shows its programs in small).
+- Fixed: hover effects, names under the pointer and highlights belonged
+  to the dock behind a window. When a window (or another dock) covers a
+  dock, the pointer over it no longer shows the dock's tooltip or
+  highlight, and a tooltip that was shown goes away. Where two docks
+  overlap, the one in front answers.
+
 0.5-test12
 ----------
 - New package for AROS x86_64 mainline (x86_64-v1), with Weather. It

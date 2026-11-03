@@ -1,2 +1,2 @@
 The program is built with the SDK of mainline AROS (aros-development-team/AROS
-  87266168, 2026-10-26) and contains the standard startup code from that SDK.|FreeType 2.14.3, libpng 1.6.58, zlib 1.3.1
+  531307d8, 2026-11-01) and contains the standard startup code from that SDK.|FreeType 2.14.3, libpng 1.6.58, zlib 1.3.1

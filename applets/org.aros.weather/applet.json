@@ -20,7 +20,8 @@
   "views": "views.json",
   "entryPoints": {
     "x86_64-abiv11": "bin/x86_64-abiv11/WeatherProvider",
-    "x86_64-v1": "bin/x86_64-v1/WeatherProvider"
+    "x86_64-v1": "bin/x86_64-v1/WeatherProvider",
+    "aarch64-raspi-v1": "bin/aarch64-raspi-v1/WeatherProvider"
   },
   "refreshOperation": "forecast"
 }

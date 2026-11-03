@@ -1,2 +1,3 @@
 0001-PROTOTYPE-backdrop-blur-behind-translucent-windows.patch
 0002-PROTOTYPE-backdrop-blur-versioned-contract.patch
+0003-stdc-close-stdio-restores-flags-only-on-own-handles.patch

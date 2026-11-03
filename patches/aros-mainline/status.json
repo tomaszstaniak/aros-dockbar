@@ -1,0 +1,17 @@
+{
+  "id": "stdc-close-stdio-own-handles",
+  "upstream": "https://github.com/aros-development-team/AROS",
+  "base": "531307d8ca815655d7208220bfe7a332d7f75cc1",
+  "status": "submitted",
+  "v1_applicability": "applies: __close_stdio() in compiler/crt/stdc/__stdio.c, mainline v1; ABIv11 tree not read",
+  "checked_upstream": "531307d8ca815655d7208220bfe7a332d7f75cc1",
+  "checked_date": "2026-11-02",
+  "validation": [
+    "x86_64-pc v1, nightly 20261031 with the patched stdcio.library installed, QEMU TCG, same VM snapshot: failed malloc 3/3, Avail FLUSH 3/3, C++ bad_alloc from failed exec allocation 3/3 clean; stock 3/3, 3/3, 7/7 damaged; only the DOS list was checked",
+    "regression for da9bbd01b5: setvbuf modes restored after exit, redirected output complete, buffered DOS output around a stdcio close kept; stock and patched identical, one boot each"
+  ],
+  "submission_url": "https://github.com/aros-development-team/AROS/pull/2028",
+  "submission_revision": "16972ae12aa46c3af5487b34d6f033aac514ee7d",
+  "next_action": "Wait for maintainer review of PR 2028; recheck on the first nightly with it merged",
+  "note": "Covers patch 0003 only. Patches 0001 and 0002 are the unsubmitted backdrop blur prototype; see docs/current-state/aros-patches.md. 2026-11-03: in-tree compiler-stdcio (pc-x86_64, GCC 10.5.0) built at 16972ae1, rc 0, no warnings or implicit declarations in __stdio.c; docs/evidence/svgicon-exceptions-20261101/pr2028-intree-build.md."
+}

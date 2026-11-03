@@ -648,8 +648,11 @@ void dock_applets_poll(uint64_t now) {
       continue;
     struct DockAppletRequest q;
     if (dock_applet_tick(&r->state, now, &q)) {
-      if (!request(&workers[slot], r, &q, r->package.operation, NULL, now))
+      if (!request(&workers[slot], r, &q, r->package.operation, NULL, now)) {
         dock_applet_fail(&r->state, "Could not launch provider", now);
+        NOTE("WIDGET %s/%s: provider could not be started; next in %lu s", r->state.package, r->state.instance,
+             (unsigned long)((r->state.next_due - now) / 1000u));
+      }
       r->changed = 1;
     }
   }

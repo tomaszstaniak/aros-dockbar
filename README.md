@@ -71,5 +71,7 @@ unverified targets.
 - [SVG dependency and packaging scope](docs/svg-dependency.md)
 - [Original runtime assets](assets/README.md)
 
-Project code and icons are original. No project-wide license has yet been
-selected; see the SVG dependency notes for the separate renderer's provenance.
+Project code and icons are original and under the MIT license (`LICENSE`).
+Bundled dependencies and artwork keep their own terms, listed in the
+package's NOTICES; see the SVG dependency notes for the separate renderer's
+provenance.

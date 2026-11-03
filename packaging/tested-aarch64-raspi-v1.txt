@@ -1,0 +1,4 @@
+- Tested only on AROS for Raspberry Pi under QEMU (raspi3b, nightly of
+  2026-10-29), with and without SMP, not on a real Raspberry Pi or with
+  sound. Weather was tested without SMP only: under QEMU the SMP system
+  got no network connection.

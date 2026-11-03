@@ -22,4 +22,8 @@ uint64_t dock_elapsed_feed(struct DockElapsed *e, uint64_t raw, uint64_t max_ste
 /* Microseconds and milliseconds of elapsed time since the first call. */
 uint64_t dock_elapsed_us(void);
 uint64_t dock_elapsed_ms(void);
+
+/* 1 when elapsed time comes from GetUpTime, 0 when timer.device could not
+ * be opened and the calendar fallback (an approximation) is in use. */
+int dock_elapsed_exact(void);
 #endif

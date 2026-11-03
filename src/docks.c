@@ -20,7 +20,7 @@ void dock_look_default(struct DockLook *look)
     look->spacing = 0;
     look->labels = DOCK_LABELS_HOVER;
     look->orientation = DOCK_HORIZONTAL;
-    look->transparency = look->glass = look->theme = look->background = look->grip = look->hover = look->running = DOCK_INHERIT;
+    look->transparency = look->glass = look->theme = look->background = look->grip = look->hover = DOCK_INHERIT;
     look->present = 0;
     look->buttons = 0;
     look->beside = 0;
@@ -35,7 +35,6 @@ void dock_appearance_default(struct DockAppearance *a)
     a->grip = 1;
     a->text = 0;
     a->hover = DOCK_HOVER_LIFT;
-    a->running = 0;
 }
 
 void dock_appearance_legacy(struct DockAppearance *a)
@@ -55,7 +54,6 @@ void dock_appearance_of(const struct DockSet *set, int index, struct DockAppeara
     if (l->glass != DOCK_INHERIT) out->glass = l->glass;
     if (l->grip != DOCK_INHERIT) out->grip = l->grip;
     if (l->hover != DOCK_INHERIT) out->hover = l->hover;
-    if (l->running != DOCK_INHERIT) out->running = l->running;
 }
 
 static int in(int v, int lo, int hi, int inherit)
@@ -67,7 +65,7 @@ static int appearance_valid(const struct DockAppearance *a)
 {
     return in(a->theme, DOCK_THEME_DARK, DOCK_THEME_AUTO, 0) && in(a->background, DOCK_BG_BAR, DOCK_BG_NONE, 0) &&
            in(a->transparency, 0, 100, 0) && in(a->glass, 0, 1, 0) && in(a->grip, 0, 1, 0) && in(a->text, 0, 1, 0) &&
-           in(a->hover, DOCK_HOVER_NONE, DOCK_HOVER_MAGNIFY, 0) && in(a->running, 0, 1, 0);
+           in(a->hover, DOCK_HOVER_NONE, DOCK_HOVER_MAGNIFY, 0);
 }
 
 void dock_place_default(struct DockPlace *place)
@@ -88,7 +86,7 @@ static int look_valid(const struct DockLook *l)
            in(l->transparency, 0, 100, 1) && in(l->glass, 0, 1, 1) &&
            in(l->theme, DOCK_THEME_DARK, DOCK_THEME_AUTO, 1) && in(l->background, DOCK_BG_BAR, DOCK_BG_NONE, 1) &&
            in(l->grip, 0, 1, 1) && in(l->hover, DOCK_HOVER_NONE, DOCK_HOVER_MAGNIFY, 1) && l->present >= 0 && l->present <= 2 && (l->buttons == 0 || l->buttons == 1) &&
-           (l->beside == 0 || l->beside == 1) && in(l->running, 0, 1, 1);
+           (l->beside == 0 || l->beside == 1);
 }
 
 static int place_valid(const struct DockPlace *p)
@@ -176,19 +174,18 @@ static int read_set(FILE *file, struct DockSet *set)
     int n, version;
     memset(set, 0, sizeof(*set));
     if (dock_cfg_record(file, line, f, 16) != 3 || strcmp(f[0], "DOCKBAR") ||
-        !dock_cfg_number(f[1], 2, 10, &version) || !dock_cfg_number(f[2], 1, INT_MAX, &set->next_id))
+        !dock_cfg_number(f[1], 2, 9, &version) || !dock_cfg_number(f[2], 1, INT_MAX, &set->next_id))
         return 0;
     if (version == 2) dock_appearance_legacy(&set->defaults);
     else {
         struct DockAppearance *a = &set->defaults;
         /* Files before version 9 had no hover effect: their icons stay still. */
         a->hover = DOCK_HOVER_NONE;
-        if (dock_cfg_record(file, line, f, 16) != (version >= 10 ? 9 : version >= 9 ? 8 : version >= 4 ? 7 : 6) || strcmp(f[0], "DEFAULTS") ||
+        if (dock_cfg_record(file, line, f, 16) != (version >= 9 ? 8 : version >= 4 ? 7 : 6) || strcmp(f[0], "DEFAULTS") ||
             !dock_cfg_number(f[1], 0, 1000, &a->theme) || !dock_cfg_number(f[2], 0, 1000, &a->background) ||
             !dock_cfg_number(f[3], 0, 1000, &a->transparency) || !dock_cfg_number(f[4], 0, 1000, &a->glass) ||
             !dock_cfg_number(f[5], 0, 1000, &a->grip) || (version >= 4 && !dock_cfg_number(f[6], 0, 1, &a->text)) ||
-            (version >= 9 && !dock_cfg_number(f[7], 0, 1000, &a->hover)) ||
-            (version >= 10 && !dock_cfg_number(f[8], 0, 1000, &a->running)))
+            (version >= 9 && !dock_cfg_number(f[7], 0, 1000, &a->hover)))
             return 0;
     }
     while ((n = dock_cfg_record(file, line, f, 16)) != 0) {
@@ -201,7 +198,7 @@ static int read_set(FILE *file, struct DockSet *set)
         int count;
         if (!dock_cfg_number(f[1], 1, INT_MAX, &d->id) || strlen(f[2]) >= DOCK_NAME) return 0;
         strcpy(d->name, f[2]);
-        int fields = version == 2 ? 8 : version == 3 ? 11 : version == 4 ? 13 : version <= 8 ? 14 : version == 9 ? 15 : 16;
+        int fields = version == 2 ? 8 : version == 3 ? 11 : version == 4 ? 13 : version <= 8 ? 14 : 15;
         if (dock_cfg_record(file, line, f, 16) != fields || strcmp(f[0], "LOOK") ||
             !dock_cfg_number(f[1], 0, 1000, &l->icon) || !dock_cfg_number(f[2], 0, 1000, &l->corner) ||
             !dock_cfg_number(f[3], 0, 1000, &l->spacing) || !dock_cfg_number(f[4], 0, 1000, &l->labels) ||
@@ -224,8 +221,6 @@ static int read_set(FILE *file, struct DockSet *set)
         if (version >= 5 && !dock_cfg_number(f[13], 0, 1, &l->beside)) return 0;
         l->hover = DOCK_INHERIT;
         if (version >= 9 && !dock_cfg_number(f[14], -1, 1000, &l->hover)) return 0;
-        l->running = DOCK_INHERIT;
-        if (version >= 10 && !dock_cfg_number(f[15], -1, 1000, &l->running)) return 0;
         if (dock_cfg_record(file, line, f, 16) != 8 || strcmp(f[0], "PLACE") ||
             !dock_cfg_number(f[1], 0, 1000, &p->mode) || !dock_cfg_number(f[2], 0, 1000, &p->align) ||
             !dock_cfg_number(f[3], 0, 1000, &p->offset) || !dock_cfg_number(f[4], 0, 1, &p->valid) ||
@@ -242,8 +237,8 @@ static int read_set(FILE *file, struct DockSet *set)
 static int write_set(FILE *file, const struct DockSet *set)
 {
     const struct DockAppearance *a = &set->defaults;
-    if (fprintf(file, "DOCKBAR\t10\t%d\nDEFAULTS\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", set->next_id,
-                a->theme, a->background, a->transparency, a->glass, a->grip, a->text, a->hover, a->running) < 0)
+    if (fprintf(file, "DOCKBAR\t9\t%d\nDEFAULTS\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", set->next_id,
+                a->theme, a->background, a->transparency, a->glass, a->grip, a->text, a->hover) < 0)
         return 0;
     for (int i = 0; i < set->count; i++) {
         const struct DockInstance *d = &set->docks[i];
@@ -253,10 +248,10 @@ static int write_set(FILE *file, const struct DockSet *set)
          * integer arguments in all, so fprintf takes 20 after file and
          * format (tests/varargs_probe.c; working notes). */
         if (fprintf(file, "DOCK\t%d\t%s\n", d->id, d->name) < 0 ||
-            fprintf(file, "LOOK\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+            fprintf(file, "LOOK\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
                     l->icon, l->corner, l->spacing, l->labels, l->orientation,
                     l->transparency, l->glass, l->theme, l->background, l->grip, l->present, l->buttons, l->beside,
-                    l->hover, l->running) < 0 ||
+                    l->hover) < 0 ||
             fprintf(file, "PLACE\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
                     p->mode, p->align, p->offset, p->valid, p->x, p->y, p->locked) < 0 ||
             fprintf(file, "ROOT\t%d\n", d->model.count) < 0)

@@ -1,0 +1,28 @@
+# Pinned provenance of the SVG renderer shipped in libs/svgicon.library.
+# Checked by scripts/package.sh for every package with SVG support.
+#
+# The library contains LunaSVG with its bundled PlutoVG at this commit
+# (aros-svg-icons deps.lock). SVGICON_LICENSE_FILE must be that checkout's
+# LICENSE, byte for byte; PlutoVG's plutovg/LICENSE at the same commit has
+# the same bytes. Change these values only together with a new renderer
+# commit, after reading the new licence text.
+lunasvg_commit=cf3594d5232e075fb344365191f0ecadd1519e1e
+lunasvg_license_sha256=a55d1e78eaf75779c336b4ba061e74aae56a21195d234474fb24a398935d6ce1
+
+# Libraries built before aros-svg-icons wrote BUILDINFO. Each is accepted
+# without BUILDINFO only for its target, only with exactly these bytes, and
+# only with the revision given here as SVGICON_REVISION. Any other library
+# needs a BUILDINFO whose target, revision, renderer and checksum match.
+# x86_64-abiv11: the library of Dockbar 0.5-test3 to 0.5-test12 (ABIv11).
+legacy=x86_64-abiv11 4c37ce0783171f07ab6e347f452cae78ecafc34e028be2a9498156cc93ad5772 d08d2f8b7d56a469586e325b26e4211527f32254
+
+# aarch64-raspi-v1: the library links the LLVM C++ runtime statically
+# (aros-svg-icons scripts/build-svgiconlib.sh raspi). Its BUILDINFO names
+# the runtime archives by checksum; they must be these, built by
+# aros-boxerapp scripts/build-cxx-runtime.sh from llvm-project-20.1.0
+# (sha256 4579051e3c255fb4bb795d54324f5a7f3ef79bd9181e44293d7ee9a7f62aad9a)
+# with the AROS tools/crosstools/llvm 20.1.0 diffs. Their licence text is
+# packaging/licenses/llvm-runtime-LICENSE.TXT (libcxx/LICENSE.TXT).
+raspi_cxxrt_libcxx_sha256=df78dd05fa7e9feb0a3e600745793cd9cde910f9f9ecfd01c8da92957cbf3e29
+raspi_cxxrt_libunwind_sha256=81525c1cff738b7550374a1ed0830368321a8a588f4181a79f4a9c009d5f0bc9
+raspi_cxxrt_license_sha256=539dd7aed86e8a4f12cbdd0e6c50c189c7d74847e4fecc64ce2c6ee3a01da38b

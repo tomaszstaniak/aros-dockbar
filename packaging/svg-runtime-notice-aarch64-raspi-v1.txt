@@ -1,0 +1,5 @@
+The Raspberry Pi svgicon.library also contains the LLVM C++ runtime
+(libc++, libc++abi and libunwind 20.1.0, built for AROS with the patches
+of AROS tools/crosstools/llvm), under the Apache License v2.0 with LLVM
+Exceptions. The three libraries have the same licence text apart from
+their names in the legacy section; libc++'s follows:

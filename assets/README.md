@@ -6,13 +6,13 @@ separate raster export step.
 
 | Source | Design | Runtime use |
 |---|---|---|
-| `runtime/folder.svg` | Blue collection folder | Default Tools icon |
+| `runtime/folder.svg` | Blue collection folder | Included SVG for item icons |
 | `runtime/terminal.svg` | Terminal window | Included alternate SVG for testing |
 | `runtime/compass.svg` | Compass explorer | Included alternate SVG for testing |
 
-The build copies them into the package's `assets/` drawer. Use, for example,
-`--svg PROGDIR:assets/compass.svg` to change the Tools item's SVG. This changes
-its artwork, not its `SYS:Tools` launch target.
+The build copies them into the package's `assets/` drawer. They are shown only
+where the user chooses one as an item's icon (Edit, Icon); items without a chosen
+icon always show their own `.info` icon, with or without `svgicon.library`.
 
 Each uses a 96×96 view box and transparent margins. There are no imported icon
 fragments, raster images, fonts, scripts or external resources. Host renderer

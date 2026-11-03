@@ -1,5 +1,6 @@
 AROS x86_64 mainline (ABIv1). Tested under QEMU on mainline AROS of
-2026-09-23 and on mainline AROS built from the sources of 2026-10-26. On a
+2026-09-23 and on mainline AROS built from the sources of 2026-10-26 and
+2026-11-01. On a
 system with window composition (mainline from 2026-10-24) and a 32-bit
 screen, see-through docks are truly transparent; elsewhere they show a
 picture of the desktop. Other systems are not tested. This package includes

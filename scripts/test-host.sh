@@ -25,9 +25,6 @@ python3 "$repo/scripts/dockpak.py" "$run/test.pak" "$run/a.txt" "$run/b.bin"
  "$repo/tests/test_interaction.c" "$repo/src/interaction.c" -o "$run/test-interaction"
 "$run/test-interaction"
 "${CC:-cc}" -std=c99 -Wall -Wextra -Werror -I"$repo/src" \
- "$repo/tests/test_running.c" "$repo/src/running.c" -o "$run/test-running"
-"$run/test-running"
-"${CC:-cc}" -std=c99 -Wall -Wextra -Werror -I"$repo/src" \
  "$repo/tests/test_composition.c" "$repo/src/model.c" "$repo/src/config.c" -o "$run/test-composition"
 "$run/test-composition" "$run/config"
 "${CC:-cc}" -std=c99 -Wall -Wextra -Werror -I"$repo/src" \

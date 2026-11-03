@@ -5,12 +5,9 @@
  * 2026-10-24): every dock is pictured. */
 int dock_present_can_compose(struct Screen *screen) { (void)screen; return 0; }
 
-int dock_present_can_blur(struct Screen *screen) { (void)screen; return 0; }
-
-struct Window *dock_present_open(int compose, int blur, struct TagItem *tags)
+struct Window *dock_present_open(int compose, struct TagItem *tags)
 {
     (void)compose;
-    (void)blur;
     return OpenWindowTagList(NULL, tags);
 }
 

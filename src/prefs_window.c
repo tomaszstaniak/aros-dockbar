@@ -143,13 +143,12 @@ static void inherit_texts(struct DockPrefsWindow *w, int redraw)
     const struct DockAppearance *a = &w->set->defaults;
     char percent[16];
     snprintf(percent, sizeof percent, "%d %%", a->transparency);
-    const char *values[7] = { d_themes[a->theme < 3 ? a->theme : 2], d_backgrounds[a->background ? 1 : 0], percent,
-                              d_offon[a->glass ? 1 : 0], d_grips[a->grip ? 0 : 1], d_hovers[a->hover >= 0 && a->hover < 3 ? a->hover : 0],
-                              d_offon[a->running ? 1 : 0] };
-    for (int i = 0; i < 7; i++) snprintf(w->inherit[i], sizeof w->inherit[i], PS(PS_INHERIT), values[i]);
+    const char *values[6] = { d_themes[a->theme < 3 ? a->theme : 2], d_backgrounds[a->background ? 1 : 0], percent,
+                              d_offon[a->glass ? 1 : 0], d_grips[a->grip ? 0 : 1], d_hovers[a->hover >= 0 && a->hover < 3 ? a->hover : 0] };
+    for (int i = 0; i < 6; i++) snprintf(w->inherit[i], sizeof w->inherit[i], PS(PS_INHERIT), values[i]);
     if (!redraw) return;
-    void *cycles[] = { w->theme, w->background, w->own_transparency, w->glass, w->grip, w->hover, w->running };
-    for (int i = 0; i < 7; i++) {
+    void *cycles[] = { w->theme, w->background, w->own_transparency, w->glass, w->grip, w->hover };
+    for (int i = 0; i < 6; i++) {
         IPTR active = attr_get(cycles[i], MUIA_Cycle_Active);
         SetAttrs(cycles[i], MUIA_NoNotify, TRUE, MUIA_Cycle_Active, active ? 0 : 1, TAG_DONE);
         SetAttrs(cycles[i], MUIA_NoNotify, TRUE, MUIA_Cycle_Active, active, TAG_DONE);
@@ -219,7 +218,6 @@ static void show(struct DockPrefsWindow *w)
     SetAttrs(w->glass, MUIA_Cycle_Active, d->look.glass + 1, TAG_DONE);
     SetAttrs(w->grip, MUIA_Cycle_Active, d->look.grip == DOCK_INHERIT ? 0 : d->look.grip ? 1 : 2, TAG_DONE);
     SetAttrs(w->hover, MUIA_Cycle_Active, d->look.hover + 1, TAG_DONE);
-    SetAttrs(w->running, MUIA_Cycle_Active, d->look.running + 1, TAG_DONE);
     dependencies(w);
 }
 
@@ -233,7 +231,6 @@ static void show_defaults(struct DockPrefsWindow *w)
     SetAttrs(w->d_grip, MUIA_Cycle_Active, a->grip ? 0 : 1, TAG_DONE);
     SetAttrs(w->d_text, MUIA_Cycle_Active, a->text ? 1 : 0, TAG_DONE);
     SetAttrs(w->d_hover, MUIA_Cycle_Active, a->hover, TAG_DONE);
-    SetAttrs(w->d_running, MUIA_Cycle_Active, a->running ? 1 : 0, TAG_DONE);
 }
 
 static void take_defaults(struct DockPrefsWindow *w)
@@ -246,7 +243,6 @@ static void take_defaults(struct DockPrefsWindow *w)
     a->grip = attr_get(w->d_grip, MUIA_Cycle_Active) ? 0 : 1;
     a->text = attr_get(w->d_text, MUIA_Cycle_Active) ? 1 : 0;
     a->hover = (int)attr_get(w->d_hover, MUIA_Cycle_Active);
-    a->running = attr_get(w->d_running, MUIA_Cycle_Active) ? 1 : 0;
 }
 
 /* The fields of the shown page into the working set. */
@@ -280,7 +276,6 @@ static void take(struct DockPrefsWindow *w)
     int grip = (int)attr_get(w->grip, MUIA_Cycle_Active);
     d->look.grip = grip == 0 ? DOCK_INHERIT : grip == 1 ? 1 : 0;
     d->look.hover = (int)attr_get(w->hover, MUIA_Cycle_Active) - 1;
-    d->look.running = (int)attr_get(w->running, MUIA_Cycle_Active) - 1;
 }
 
 static void fill_list(struct DockPrefsWindow *w)
@@ -351,9 +346,7 @@ int dock_prefs_window_open(struct DockPrefsWindow *w, struct Screen *screen,
     const char *glasses[] = { w->inherit[3], PS(PS_OFF), PS(PS_ON), NULL };
     const char *grips[] = { w->inherit[4], PS(PS_SHOWN), PS(PS_HIDDEN), NULL };
     const char *hovers[] = { w->inherit[5], PS(PS_NONE), PS(PS_LIFT), PS(PS_MAGNIFY), NULL };
-    const char *runnings[] = { w->inherit[6], PS(PS_OFF), PS(PS_ON), NULL };
     memcpy(w->themes, themes, sizeof themes);
-    memcpy(w->runnings, runnings, sizeof runnings);
     memcpy(w->hovers, hovers, sizeof hovers);
     memcpy(w->backgrounds, backgrounds, sizeof backgrounds);
     memcpy(w->own, own, sizeof own);
@@ -406,8 +399,6 @@ int dock_prefs_window_open(struct DockPrefsWindow *w, struct Screen *screen,
         !label(MUIMasterBase, f, PS(PS_TEXT)) || !(w->d_text = cycle(MUIMasterBase, f, d_texts)) ||
         !label(MUIMasterBase, f, PS(PS_HOVER)) || !(w->d_hover = cycle(MUIMasterBase, f, d_hovers)) ||
         !note(MUIMasterBase, f, PS(PS_NOTE_HOVER)) ||
-        !label(MUIMasterBase, f, PS(PS_RUNNING)) || !(w->d_running = cycle(MUIMasterBase, f, d_offon)) ||
-        !note(MUIMasterBase, f, PS(PS_NOTE_RUNNING)) ||
         !filler(MUIMasterBase, defaults_page)) FAIL;
     dock_page = page(MUIMasterBase, right);
     if (!dock_page || !(w->header = attach(MUIMasterBase, dock_page, new_object(MUIC_Text, MUIA_Text_Contents, (IPTR)"", TAG_DONE))))
@@ -451,8 +442,6 @@ int dock_prefs_window_open(struct DockPrefsWindow *w, struct Screen *screen,
         !label(MUIMasterBase, f, PS(PS_CORNERS)) || !(w->corner = slider(MUIMasterBase, f, 0, DOCK_CORNER_MAX)) ||
         !label(MUIMasterBase, f, PS(PS_HOVER)) || !(w->hover = cycle(MUIMasterBase, f, w->hovers)) ||
         !note(MUIMasterBase, f, PS(PS_NOTE_HOVER)) ||
-        !label(MUIMasterBase, f, PS(PS_RUNNING)) || !(w->running = cycle(MUIMasterBase, f, w->runnings)) ||
-        !note(MUIMasterBase, f, PS(PS_NOTE_RUNNING)) ||
         !filler(MUIMasterBase, p)) FAIL;
     /* Behaviour */
     p = page(MUIMasterBase, w->tabs); f = p ? fields(MUIMasterBase, p) : NULL;

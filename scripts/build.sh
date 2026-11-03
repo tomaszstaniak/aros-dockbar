@@ -7,6 +7,16 @@ set -eu
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 . "$repo/scripts/target.sh"
 case "$dock_target" in x86_64-*) dock_check_abi ;; esac
+# The generated svgicon headers differ between the ABIs (library base access).
+# When they come from an aros-svg-icons build, its BUILDINFO names the target.
+inc_info=$(dirname "$(dirname "$SVGICON_INCLUDE")")/BUILDINFO
+if [ -f "$inc_info" ]; then
+  case "$(sed -n 's/^target=//p' "$inc_info")" in abiv11) inc_abi=v11 ;; v1|raspi) inc_abi=v1 ;; *) inc_abi=unknown ;; esac
+  [ "$inc_abi" = "$dock_abi" ] || { echo "SVGICON_INCLUDE is from a build for another ABI ($inc_info)" >&2; exit 1; }
+fi
+if [ "$SVGICON_LIBRARY" != none ]; then
+  dock_check_svgicon "$SVGICON_LIBRARY"
+fi
 output=$dock_build
 variant=$dock_target
 # Window composition (real per-pixel transparency) is compiled in when the
@@ -30,7 +40,7 @@ warn=
 if echo 'int dock_probe;' | "$AROS_CC" --sysroot="$AROS_SDK" -Winfinite-recursion -Werror -x c -c -o /dev/null - 2>/dev/null; then
   warn=-Winfinite-recursion
 fi
-app_src="$repo/src/applets/view.c $repo/src/applets/cards_aros.c $repo/src/applets/cache.c $repo/src/applets/json.c $repo/src/applets/package.c $repo/src/applets/snapshot.c $repo/src/applets/instance.c $repo/src/applets/settings.c $repo/src/applets/worker_aros.c $repo/src/applets/purge.c $repo/src/applets/panel_aros.c $repo/src/sprite.c $repo/src/pak.c $repo/src/fade.c $repo/src/main.c $repo/src/elapsed.c $repo/src/elapsed_aros.c $repo/src/model.c $repo/src/config.c $repo/src/interaction.c $repo/src/running.c $repo/src/running_aros.c $repo/src/group_panel.c $repo/src/chrome.c $repo/src/frame.c $repo/src/prefs.c $repo/src/prefs_window.c $repo/src/prefs_strings.c $repo/src/grip_menu.c $repo/src/about.c $repo/src/item_list.c $repo/src/layout.c $repo/src/magnify.c $repo/src/hover.c $repo/src/docks.c $repo/src/widget.c $repo/src/item_editor.c $repo/src/native_icons.c $repo/src/svg_icons.c $repo/src/resample.c $repo/src/snapshot.c $repo/src/theme.c $repo/src/textrender.c $repo/src/fontfile.c $repo/src/command.c $repo/src/drawer_panel.c $repo/src/dirlist.c $repo/src/icon_cache.c $repo/src/alpha.c $present_src"
+app_src="$repo/src/applets/view.c $repo/src/applets/cards_aros.c $repo/src/applets/cache.c $repo/src/applets/json.c $repo/src/applets/package.c $repo/src/applets/snapshot.c $repo/src/applets/instance.c $repo/src/applets/settings.c $repo/src/applets/worker_aros.c $repo/src/applets/purge.c $repo/src/applets/panel_aros.c $repo/src/sprite.c $repo/src/pak.c $repo/src/fade.c $repo/src/main.c $repo/src/elapsed.c $repo/src/elapsed_aros.c $repo/src/model.c $repo/src/config.c $repo/src/interaction.c $repo/src/group_panel.c $repo/src/chrome.c $repo/src/frame.c $repo/src/prefs.c $repo/src/prefs_window.c $repo/src/prefs_strings.c $repo/src/grip_menu.c $repo/src/about.c $repo/src/item_list.c $repo/src/layout.c $repo/src/magnify.c $repo/src/hover.c $repo/src/docks.c $repo/src/widget.c $repo/src/item_editor.c $repo/src/native_icons.c $repo/src/svg_icons.c $repo/src/resample.c $repo/src/snapshot.c $repo/src/theme.c $repo/src/textrender.c $repo/src/fontfile.c $repo/src/command.c $repo/src/drawer_panel.c $repo/src/dirlist.c $repo/src/icon_cache.c $repo/src/alpha.c $present_src"
 # shellcheck disable=SC2086  # $app_src: paths without spaces (checked below)
 case "$repo" in *" "*) echo "The repository path must not contain spaces" >&2; exit 1 ;; esac
 "$AROS_CC" --sysroot="$AROS_SDK" -std=gnu99 -O2 -Wall -Wextra -Werror $warn \
@@ -106,8 +116,8 @@ fi
  "$repo/tests/expose_probe.c" -o "$output/dev/expose_probe" -lcybergraphics
 "$AROS_CC" --sysroot="$AROS_SDK" -std=gnu99 -O2 -Wall -Wextra -Werror \
  "$repo/tests/cover_probe.c" -o "$output/dev/cover_probe"
-"$AROS_CC" --sysroot="$AROS_SDK" -std=gnu99 -O2 -Wall -Wextra -Werror -I"$repo/src" \
- "$repo/tests/running_probe.c" "$repo/src/running.c" "$repo/src/running_aros.c" -o "$output/dev/running_probe"
+"$AROS_CC" --sysroot="$AROS_SDK" -std=gnu99 -O2 -Wall -Wextra -Werror \
+ "$repo/tests/running_probe.c" -o "$output/dev/running_probe"
 "$AROS_CC" --sysroot="$AROS_SDK" -std=gnu99 -O2 -Wall -Wextra -Werror -I"$repo/src" -I"$AROS_SDK/include/freetype" \
  "$repo/tests/text_probe.c" "$repo/src/textrender.c" "$repo/src/fontfile.c" -o "$output/dev/text_probe" \
  -lcybergraphics "$AROS_SDK/lib/libfreetype2.static.a" "$AROS_SDK/lib/libpng_nostdio.a" "$AROS_SDK/lib/libz.static.a" -lm
@@ -147,9 +157,15 @@ fi
 "$AROS_CC" --sysroot="$AROS_SDK" -std=gnu99 -O2 -Wall -Wextra -Werror -I"$repo/src" \
  "$repo/tests/applet_worker_probe.c" "$repo/src/applets/json.c" "$repo/src/applets/snapshot.c" \
  -o "$output/dev/applet_worker_probe" -lm
+# A library left from an earlier build must not reach a package built now.
+rm -f "$output/package/libs/svgicon.library" "$output/svgicon.BUILDINFO"
 if [ "$SVGICON_LIBRARY" = none ]; then
  echo "No svgicon.library for this target: SVG icons fall back to .info icons" >&2
-else cp "$SVGICON_LIBRARY" "$output/package/libs/svgicon.library"; fi
+else
+ cp "$SVGICON_LIBRARY" "$output/package/libs/svgicon.library"
+ # Kept outside the package, for scripts/package.sh to check the revision.
+ [ ! -f "$(dirname "$SVGICON_LIBRARY")/BUILDINFO" ] || cp "$(dirname "$SVGICON_LIBRARY")/BUILDINFO" "$output/svgicon.BUILDINFO"
+fi
 cp "$repo"/assets/runtime/*.svg "$output/package/assets/"
 printf 'Application: %s\nDeveloper probes: %s\n' "$output/package" "$output/dev"
 

@@ -18,32 +18,10 @@ int dock_present_can_compose(struct Screen *screen)
     return alpha != 0;
 }
 
-/* PROTOTYPE (proto-backdrop-blur): neither tag is in mainline yet, and their
- * numbers are not reserved. An attribute given this number later would answer
- * too, so only this contract's exact answer sends the window tag; the first
- * prototype's TRUE does not. The same value as Limpet's backdrop_blur.h. */
-#ifndef WA_BackdropBlur
-#define WA_BackdropBlur (WA_Dummy + 107)
-#endif
-#ifndef SA_BackdropBlurSupport
-#define SA_BackdropBlurSupport (SA_Dummy + 161)
-#endif
-#ifndef BACKDROPBLUR_CONTRACT_V1
-#define BACKDROPBLUR_CONTRACT_V1 0x424c5201UL
-#endif
-int dock_present_can_blur(struct Screen *screen)
-{
-    IPTR blur = 0;
-    if (!screen) return 0;
-    if (!GetAttr(SA_BackdropBlurSupport, (Object *)screen, &blur)) return 0;
-    return blur == BACKDROPBLUR_CONTRACT_V1;
-}
-
-struct Window *dock_present_open(int compose, int blur, struct TagItem *tags)
+struct Window *dock_present_open(int compose, struct TagItem *tags)
 {
     struct TagItem extra[] = {
         {WA_AlphaSurface, TRUE},
-        {blur > 0 ? WA_BackdropBlur : TAG_IGNORE, (IPTR)blur},
         {TAG_MORE, (IPTR)tags},
     };
     return OpenWindowTagList(NULL, compose ? extra : tags);

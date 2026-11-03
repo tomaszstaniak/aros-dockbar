@@ -25,21 +25,10 @@ struct TagItem;
  * compositor support. */
 int dock_present_can_compose(struct Screen *screen);
 
-/* The screen's compositor can blur what lies behind a composed window
- * (frosted glass without a desktop picture): SA_BackdropBlurSupport.
- * PROTOTYPE: mainline has no such attribute yet; a system without it
- * answers no. 0 where this build has no compositor support. Even where
- * the answer is yes, a window can show plain transparency for a moment
- * when the system is short of memory. */
-int dock_present_can_blur(struct Screen *screen);
-
 /* OpenWindowTagList(NULL, tags), asking for an alpha surface when compose
- * is set, and for the area behind it blurred by 'blur' pixels (0: none)
- * when the compositor can. The system may still give an ordinary window
- * (no memory for the surface, budget of the screen used up);
- * dock_present_composed() tells. A blur it cannot do leaves plain
- * transparency. */
-struct Window *dock_present_open(int compose, int blur, struct TagItem *tags);
+ * is set. The system may still give an ordinary window (no memory for the
+ * surface, budget of the screen used up); dock_present_composed() tells. */
+struct Window *dock_present_open(int compose, struct TagItem *tags);
 
 /* The window has its own alpha surface now. Asked after opening and after
  * every size change: a surface that cannot grow is turned into an ordinary
