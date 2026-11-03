@@ -16,6 +16,9 @@ svg=${DOCK_SVG:-1}
 if [ "$svg" = 1 ]; then
   svgrev=${SVGICON_REVISION:?Set SVGICON_REVISION to the aros-svg-icons commit the library was built from}
   svglicence=${SVGICON_LICENSE_FILE:?Set SVGICON_LICENSE_FILE to the LunaSVG LICENSE of that build}
+  # The aros-svg-icons checkout the library was built from: its own licence,
+  # THIRD-PARTY.md and the licence texts of what the library contains.
+  svgproj=${SVGICON_PROJECT:?Set SVGICON_PROJECT to the aros-svg-icons checkout of that revision}
 fi
 stamp=202610131200
 export TZ=UTC  # same archive bytes on every host
@@ -95,6 +98,15 @@ if [ "$svg" = 1 ]; then
     { echo "packaging/svg-notice.txt does not name the pinned LunaSVG commit $pin_commit" >&2; exit 1; }
   # Shipped for users to choose as item icons.
   [ -s "$repo/assets/runtime/folder.svg" ] || { echo "Missing assets/runtime/folder.svg" >&2; exit 1; }
+  for f in LICENSE THIRD-PARTY.md licenses/LunaSVG-PlutoVG-MIT.txt licenses/AROS-APL-1.1.txt; do
+    [ -s "$svgproj/$f" ] || { echo "Missing $svgproj/$f" >&2; exit 1; }
+  done
+  if [ -d "$svgproj/.git" ]; then
+    [ "$(git -C "$svgproj" rev-parse HEAD)" = "$svgrev" ] ||
+      { echo "$svgproj is not at SVGICON_REVISION $svgrev" >&2; exit 1; }
+    [ -z "$(git -C "$svgproj" status --porcelain -- LICENSE THIRD-PARTY.md licenses)" ] ||
+      { echo "Licence files in $svgproj are modified" >&2; exit 1; }
+  fi
 fi
 if [ "$dock_weather" = yes ]; then
   weather="$build/package/Widgets/org.aros.weather"
@@ -152,6 +164,13 @@ open(sys.argv[1],"w").write(t.replace(key, add + key, 1))' "$readme_w" "$wlic" |
     mkdir -p "$app/assets" "$app/libs"
     cp "$repo"/assets/runtime/*.svg "$app/assets/"
     cp "$build/package/libs/svgicon.library" "$app/libs/"
+    mkdir -p "$app/licenses/svgicon"
+    cp "$svgproj/LICENSE" "$svgproj/THIRD-PARTY.md" "$svgproj/licenses/LunaSVG-PlutoVG-MIT.txt" \
+       "$svgproj/licenses/AROS-APL-1.1.txt" "$app/licenses/svgicon/"
+    case "$target" in
+      aarch64-*) cp "$svgproj/licenses/LLVM-Apache-2.0-with-LLVM-exception.txt" "$app/licenses/svgicon/" ;;
+      *) cp "$svgproj/licenses/GPL-3.0.txt" "$svgproj/licenses/GCC-RUNTIME-LIBRARY-EXCEPTION-3.1.txt" "$app/licenses/svgicon/" ;;
+    esac
     note="- SVG icons are drawn by libs/svgicon.library. Keep the libs and assets\n  drawers next to the program."
     notice=$(sed "s/@SVGREV@/$svgrev/" "$repo/packaging/svg-notice.txt"; cat "$svglicence")
     # A library that links its own C++ runtime (Raspberry Pi: LLVM libc++,
@@ -204,6 +223,12 @@ open(sys.argv[1],"w").write(t.replace(old, "- Weather:", 1))' "$app/ReadMe" || e
   cat "$repo/assets/tabler/LICENSE" >> "$app/NOTICES"
   chmod 755 "$app/Dockbar"
   find "$root" -exec touch -t "$stamp" {} +
+  # No file of a package may carry the build machine's paths: they name
+  # the user and the workspace (debug info, __FILE__, embedded compiler
+  # lines of static libraries).
+  ws=$(dirname "$repo"); ws=$(dirname "$ws")
+  leaks=$(LC_ALL=C grep -r -l -a -F -e /Users/ -e /Volumes/ -e "$HOME" -e "$ws" -e "/$(id -un)/" "$root" || true)
+  [ -z "$leaks" ] || { echo "Build paths in the package (fix the build, do not ship):" >&2; echo "$leaks" >&2; exit 1; }
   (cd "$root" && zip -X -q -r "$work/$1.zip" Dockbar Dockbar.info)
   # dist/ is where the user picks archives up: an archive already there may
   # have been handed out, so it is never replaced by different bytes.

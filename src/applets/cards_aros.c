@@ -174,7 +174,12 @@ static void draw(void){
  if(card.hover==4)plate(420,162,28,27,c->popup_hover);
  control(2,387,165,card.page>0);
  control(3,424,165,card.page+6<n);
+ /* The hourly icons sit on the card's own fill inside an inset outline:
+  * the light cloud tone of the weather artwork (about 220,227,233) is the
+  * inset colour itself, so on a filled inset plate clouds vanished and
+  * two-tone clouds showed only their dark half. */
  plate(margin,192,inner,86,inset);
+ dock_round_fill(rp,margin+1,193,inner-2,84,5,c->popup_fill,inset);
  for(int k=0;k<6&&card.page+k<n;k++){
   const struct DockAppletRow *r=&s->rows[hourly[card.page+k]];
   int x=margin+k*inner/6,w=(k+1)*inner/6-k*inner/6;

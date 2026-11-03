@@ -19,10 +19,11 @@ legacy=x86_64-abiv11 4c37ce0783171f07ab6e347f452cae78ecafc34e028be2a9498156cc93a
 # aarch64-raspi-v1: the library links the LLVM C++ runtime statically
 # (aros-svg-icons scripts/build-svgiconlib.sh raspi). Its BUILDINFO names
 # the runtime archives by checksum; they must be these, built by
-# aros-boxerapp scripts/build-cxx-runtime.sh from llvm-project-20.1.0
+# aros-svg-icons scripts/build-cxxrt-raspi.sh from llvm-project-20.1.0
 # (sha256 4579051e3c255fb4bb795d54324f5a7f3ef79bd9181e44293d7ee9a7f62aad9a)
-# with the AROS tools/crosstools/llvm 20.1.0 diffs. Their licence text is
+# with the AROS tools/crosstools/llvm 20.1.0 diffs (pinned in that
+# project's third_party/llvm-runtimes-aros/PINS). Their licence text is
 # packaging/licenses/llvm-runtime-LICENSE.TXT (libcxx/LICENSE.TXT).
-raspi_cxxrt_libcxx_sha256=df78dd05fa7e9feb0a3e600745793cd9cde910f9f9ecfd01c8da92957cbf3e29
-raspi_cxxrt_libunwind_sha256=81525c1cff738b7550374a1ed0830368321a8a588f4181a79f4a9c009d5f0bc9
+raspi_cxxrt_libcxx_sha256=4c153551451e222c0da51afde704129dcbd33d5dea753ce3c5f4390bdf2e3da8
+raspi_cxxrt_libunwind_sha256=98683e2c8e11a99e8208a5022949cbd92b983787076235236934b0e2f2d55a67
 raspi_cxxrt_license_sha256=539dd7aed86e8a4f12cbdd0e6c50c189c7d74847e4fecc64ce2c6ee3a01da38b

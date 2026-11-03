@@ -3,6 +3,10 @@ libs/svgicon.library (only in the package with SVG support)
   An SVG renderer library from the separate aros-svg-icons project by the
   same author, revision
   @SVGREV@.
-  That project's own licence is not decided yet. The library contains LunaSVG and its bundled PlutoVG, commit
-  cf3594d5232e075fb344365191f0ecadd1519e1e, both under the MIT licence:
+  The code of that project is under the MIT licence; its text and the
+  project's list of the third-party components inside the library are in
+  licenses/svgicon (LICENSE, THIRD-PARTY.md), with the licence texts of
+  those components. The library contains LunaSVG and its bundled PlutoVG,
+  commit cf3594d5232e075fb344365191f0ecadd1519e1e, both under the MIT
+  licence:
 

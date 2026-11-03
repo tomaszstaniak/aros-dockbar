@@ -43,10 +43,17 @@ fi
 app_src="$repo/src/applets/view.c $repo/src/applets/cards_aros.c $repo/src/applets/cache.c $repo/src/applets/json.c $repo/src/applets/package.c $repo/src/applets/snapshot.c $repo/src/applets/instance.c $repo/src/applets/settings.c $repo/src/applets/worker_aros.c $repo/src/applets/purge.c $repo/src/applets/panel_aros.c $repo/src/sprite.c $repo/src/pak.c $repo/src/fade.c $repo/src/main.c $repo/src/elapsed.c $repo/src/elapsed_aros.c $repo/src/model.c $repo/src/config.c $repo/src/interaction.c $repo/src/group_panel.c $repo/src/chrome.c $repo/src/frame.c $repo/src/prefs.c $repo/src/prefs_window.c $repo/src/prefs_strings.c $repo/src/grip_menu.c $repo/src/about.c $repo/src/item_list.c $repo/src/layout.c $repo/src/magnify.c $repo/src/hover.c $repo/src/docks.c $repo/src/widget.c $repo/src/item_editor.c $repo/src/native_icons.c $repo/src/svg_icons.c $repo/src/resample.c $repo/src/snapshot.c $repo/src/theme.c $repo/src/textrender.c $repo/src/fontfile.c $repo/src/command.c $repo/src/drawer_panel.c $repo/src/dirlist.c $repo/src/icon_cache.c $repo/src/alpha.c $present_src"
 # shellcheck disable=SC2086  # $app_src: paths without spaces (checked below)
 case "$repo" in *" "*) echo "The repository path must not contain spaces" >&2; exit 1 ;; esac
-"$AROS_CC" --sysroot="$AROS_SDK" -std=gnu99 -O2 -Wall -Wextra -Werror $warn \
+# Packaged binaries carry no build-machine paths: source and SDK paths are
+# mapped to fixed names, and the debug sections of the linked toolchain and
+# SDK libraries are stripped below (scripts/package.sh refuses any left).
+pmap="-ffile-prefix-map=$repo=dockbar -ffile-prefix-map=$AROS_SDK=sdk"
+"$AROS_CC" --sysroot="$AROS_SDK" -std=gnu99 -O2 -Wall -Wextra -Werror $warn $pmap \
  -DDOCK_APPLET_VARIANT=\"$variant\" $present_def -I"$SVGICON_INCLUDE" -I"$output/gen" -I"$repo/src" \
  $app_src -I"$AROS_SDK/include/freetype" \
  -o "$output/package/Dockbar" -lworkbench -licon -lcybergraphics -lmuimaster "$AROS_SDK/lib/libfreetype2.static.a" "$AROS_SDK/lib/libpng_nostdio.a" "$AROS_SDK/lib/libz.static.a" -lm
+strip=${AROS_CC%gcc}strip; [ -x "$strip" ] || strip=${AROS_CC%cc}strip
+[ -x "$strip" ] || { echo "No $strip to strip the debug sections" >&2; exit 1; }
+"$strip" --strip-debug "$output/package/Dockbar"
 # Test build that keeps a dock closed 4 s while taking its desktop picture.
 "$AROS_CC" --sysroot="$AROS_SDK" -std=gnu99 -O2 -Wall -Wextra -Werror $warn -DDOCK_TEST_MIN_HOLD_MS=4000u \
  -DDOCK_APPLET_VARIANT=\"$variant\" $present_def -I"$SVGICON_INCLUDE" -I"$output/gen" -I"$repo/src" \

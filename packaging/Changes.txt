@@ -1,6 +1,15 @@
 Dockbar changes
 ===============
 
+0.5.1
+-----
+- Fixed: in the Weather card, the hourly forecast showed some icons
+  empty or only in part. Light clouds were drawn on a strip of nearly
+  the same colour; the strip now uses the card's own background.
+- Fixed: the Weather widget for AROS x86_64 mainline did not finish its
+  thread library's clean-up when it exited. It is now linked so that the
+  clean-up runs.
+
 0.5
 ---
 - The first version of the 0.5 series that is not a test version. It adds
