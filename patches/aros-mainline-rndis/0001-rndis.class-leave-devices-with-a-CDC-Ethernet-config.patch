@@ -1,0 +1,98 @@
+From 95e15bb5d6455570baf957199d1b460277b65068 Mon Sep 17 00:00:00 2001
+From: tomaszstaniak <68373859+tomaszstaniak@users.noreply.github.com>
+Date: Wed, 4 Nov 2026 15:16:46 +0100
+Subject: [PATCH] rndis.class: leave devices with a CDC Ethernet configuration
+ to cdceth.class
+
+QEMU's usb-net offers an RNDIS configuration and a CDC Ethernet configuration. Since rndis.class binds the RNDIS control interface (2/2/255) at interface level, the class that gets such a device depends on timing. psdClassScan() offers every interface to every loaded class before it tries device bindings, and AddUSBClasses adds the classes one by one. If the device is scanned while cdceth.class is loaded and rndis.class is not yet, cdceth.class binds it and the SANA device is usbcdceth.device. If rndis.class is already loaded, rndis.class binds it and the SANA device is usbrndis.device. A network configuration that names one of them fails on the boots where the other one won.
+
+rndis.class now declines the RNDIS interface when another configuration of the same device has a CDC Ethernet control interface (class 2, subclass 6, 12 or 13), so cdceth.class takes the device through its device binding. RNDIS-only devices bind as before, and a forced binding still goes through usbForceInterfaceBinding(). usbAttemptInterfaceBinding() also closes poseidon.library on the path that returns NULL.
+---
+ rom/usb/classes/rndis/rndis.class.c | 57 ++++++++++++++++++++++++++++-
+ 1 file changed, 56 insertions(+), 1 deletion(-)
+
+diff --git a/rom/usb/classes/rndis/rndis.class.c b/rom/usb/classes/rndis/rndis.class.c
+index 365480f6a7..fdc5158ff5 100644
+--- a/rom/usb/classes/rndis/rndis.class.c
++++ b/rom/usb/classes/rndis/rndis.class.c
+@@ -126,6 +126,49 @@ struct AutoBindData ClassBinds[] =
+     { 0, 0 }
+ };
+ 
++/* /// "rndisHasCDCEthernet()" */
++/* Returns TRUE if a configuration of the device other than rndiscfg has a
++ * CDC Ethernet control interface (class 2, subclass 6 ECM, 12 EEM or 13 NCM).
++ * cdceth.class binds such devices at device level. */
++static BOOL rndisHasCDCEthernet(struct Library *ps, struct PsdDevice *pd, struct PsdConfig *rndiscfg)
++{
++    struct List *cfgs = NULL;
++    struct List *ifs;
++    struct Node *pc;
++    struct Node *pif;
++    IPTR ifclass;
++    IPTR subclass;
++
++    psdGetAttrs(PGA_DEVICE, pd, DA_ConfigList, &cfgs, TAG_END);
++    if(!cfgs)
++        return(FALSE);
++
++    for(pc = cfgs->lh_Head; pc->ln_Succ; pc = pc->ln_Succ)
++    {
++        if(pc == (struct Node *) rndiscfg)
++            continue;
++
++        ifs = NULL;
++        psdGetAttrs(PGA_CONFIG, pc, CA_InterfaceList, &ifs, TAG_END);
++        if(!ifs)
++            continue;
++
++        for(pif = ifs->lh_Head; pif->ln_Succ; pif = pif->ln_Succ)
++        {
++            ifclass = 0;
++            subclass = 0;
++            psdGetAttrs(PGA_INTERFACE, pif,
++                        IFA_Class, &ifclass,
++                        IFA_SubClass, &subclass,
++                        TAG_DONE);
++            if((ifclass == 2) && ((subclass == 6) || (subclass == 12) || (subclass == 13)))
++                return(TRUE);
++        }
++    }
++    return(FALSE);
++}
++/* \\\ */
++
+ /* /// "usbAttemptInterfaceBinding()" */
+ struct NepClassEth * usbAttemptInterfaceBinding(struct NepEthBase *nh, struct PsdInterface *pif)
+ {
+@@ -167,6 +210,18 @@ struct NepClassEth * usbAttemptInterfaceBinding(struct NepEthBase *nh, struct Ps
+         if(((ifclass == 2)   && (subclass == 2) && (proto == 255)) ||
+            ((ifclass == 224) && (subclass == 1) && (proto == 3)))
+         {
++            /* A device that also offers a CDC Ethernet configuration (for
++             * example QEMU usb-net) is left to cdceth.class. Poseidon
++             * offers interfaces to all classes before it tries device
++             * bindings, so without this check the class that won depended
++             * on whether rndis.class was already loaded when the device was
++             * scanned. A forced binding still selects RNDIS. */
++            if(pd && rndisHasCDCEthernet(ps, pd, pc))
++            {
++                KPRINTF(1, ("CDC Ethernet configuration present, leaving device to cdceth.class\n"));
++                CloseLibrary(ps);
++                return(NULL);
++            }
+             CloseLibrary(ps);
+             return(usbForceInterfaceBinding(nh, pif));
+         }
+@@ -180,7 +235,7 @@ struct NepClassEth * usbAttemptInterfaceBinding(struct NepEthBase *nh, struct Ps
+             }
+             abd++;
+         }
+-
++        CloseLibrary(ps);
+     }
+     return(NULL);
+ }
+-- 
+2.54.0 (Apple Git-157)
+
