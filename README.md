@@ -1,9 +1,13 @@
 # AROS Dockbar
 
-A development prototype of an Amiga-style dock for stock x86_64 ABIv11. It
-combines application launchers, curated groups, a Tools drawer, separators,
-hover labels and a live clock in a movable horizontal bar. The default icon
-box is 40 px and the bar is 56 px high.
+An Amiga-style dock for AROS: launchers, groups, a Tools drawer, separators,
+hover labels, clocks, a Weather widget and SVG icons in a movable bar.
+Download the packages from the
+[releases page](https://github.com/tomaszstaniak/aros-dockbar/releases).
+Version 0.5.1 has packages for x86_64 mainline AROS (ABIv1, PC), x86_64
+ABIv11 (for example AROS One, PC) and AROS for Raspberry Pi (aarch64). Each
+target has a package with SVG icons and an `-info-only` package without the
+SVG renderer; both include Weather.
 
 Click a launcher to open it, or drop an application icon from Wanderer to pin
 it. To create a group, drag an application onto the center of another dock
@@ -20,7 +24,7 @@ the panel's **Edit** button to edit a group. The Zune/MUI editor changes the nam
 optional `.info` or SVG icon. **Remove** deletes the shortcut; removing a group
 also removes its contained shortcuts. Applications and files remain on disk.
 
-Composition and position are saved in `PROGDIR:dock.config` by default. See
+Composition and position are saved in `PROGDIR:docks.config` by default. See
 [usage and configuration](docs/development.md) for controls, migration from
 legacy pins, and recovery behavior.
 
@@ -30,40 +34,30 @@ enlarged. Pure planar icons retain system drawing and downscaling. SVG icons
 are rendered at the requested size. The bar and grid work on a stock system with
 no patched system library. Their rounded outlines use Intuition shape regions; the item editor uses stock Zune controls and follows the system theme.
 
-## Build and try
+## Build
 
-Configure the matching compiler, SDK and separate SVG development inputs:
+Configure the matching compiler, SDK and, optionally, the separate SVG
+renderer (`SVGICON_LIBRARY=none` builds without it):
 
 ```sh
 ./scripts/test-host.sh
-DOCK_TARGET=x86_64-abiv11 ./scripts/build.sh   # or x86_64-v1 (mainline)
+DOCK_TARGET=x86_64-abiv11 ./scripts/build.sh   # or x86_64-v1, aarch64-raspi-v1
 ```
 
-The local test package is written to `build/<target>/package/`; the build
-stops when the compiler and SDK are not of the target's ABI. The
-[development guide](docs/development.md) lists environment variables and runtime
-options. Building requires SVG headers and a library; missing SVG support at
-runtime falls back to a native icon or placeholder.
+The test package is written to `build/<target>/package/`; the build stops
+when the compiler and SDK are not of the target's ABI. The
+[development guide](docs/development.md) lists the environment variables and
+runtime options. The public sources contain SVG placeholders for the Weather
+icons; the released packages use licensed artwork that is not in this
+repository (see the development guide).
 
-## Status and targets
+## Status
 
-This is not a public release. On 2026-10-13 it was built and run on stock
-x86_64 ABIv11 2026.09 under QEMU. Scoped checks covered native and SVG icons,
-normal/selected icon filtering, Wanderer drops and duplicates, application
-launching, group creation and renaming, root/grid reordering, extracting a
-group child, custom SVG group icons, shortcut removal, and composition and
-moved-position restoration across application restarts. The visual iteration
-also exercised rounded windows and the Zune editor, including `.info`/SVG
-overrides, cancellation and removal. See the development
-guide for the tested formats and remaining limits.
-
-There is one horizontal dock, at most eight one-level groups, and no nested
-groups. Multiple docks, vertical orientation, position locking and running-app
-discovery are not implemented. Mainline x86_64 (ABIv1) is a second
-target since 0.5-test12: on a system with window composition (mainline from
-2026-10-24) see-through docks are truly transparent, elsewhere they use a
-picture of the desktop as on ABIv11. Raspberry Pi, macAROS and i386 remain
-unverified targets.
+0.5.1 was tested under QEMU, not on real hardware: x86_64 mainline nightly
+of 3 November 2026, AROS One 2026.09, and the Raspberry Pi nightly of
+29 October 2026 (QEMU raspi3b) with and without SMP. The release notes list
+the known limitations. There is one horizontal dock, at most eight one-level
+groups and no nested groups.
 
 ## Documentation
 
