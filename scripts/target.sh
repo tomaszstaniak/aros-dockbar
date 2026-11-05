@@ -15,15 +15,15 @@
 
 dock_target=${DOCK_TARGET:?Set DOCK_TARGET to x86_64-abiv11, x86_64-v1 or aarch64-raspi-v1}
 case "$dock_target" in
-  x86_64-abiv11) dock_abi=v11; dock_weather=yes; dock_pack=x86_64-abiv11; dock_archive=aros-x86_64-abiv11-pc
+  x86_64-abiv11) dock_abi=v11; dock_weather=yes; dock_weather_cflags=; dock_pack=x86_64-abiv11; dock_archive=aros-x86_64-abiv11-pc
     dock_weather_libs="-lcurl -lssl -lcrypto -lzstd -lz.static -lm" ;;
-  x86_64-v1) dock_abi=v1; dock_weather=yes; dock_pack=x86_64-v1; dock_archive=aros-x86_64-abiv1-pc
+  x86_64-v1) dock_abi=v1; dock_weather=yes; dock_weather_cflags=-DWEATHER_STDC_COMPAT; dock_pack=x86_64-v1; dock_archive=aros-x86_64-abiv1-pc
     # contrib curl 8.21 over contrib OpenSSL 4.0.1; curl reaches sockets
     # through miami.library and net.lib. -lpthread is named for the reason
     # given under aarch64-raspi-v1: here only libpthread's exit set was lost
     # (AROS issue 2071), so __pthread_Exit_Func never ran.
     dock_weather_libs="-lcurl -lssl -lcrypto -lzstd-static -lbrotlidec -lbrotlicommon -lz.static -lmiami -lnet -latomic -lpthread -lm" ;;
-  aarch64-raspi-v1) dock_abi=v1; dock_weather=yes; dock_pack=aarch64-raspi-v1; dock_archive=aros-aarch64-abiv1-raspi
+  aarch64-raspi-v1) dock_abi=v1; dock_weather=yes; dock_weather_cflags=-DWEATHER_STDC_COMPAT; dock_pack=aarch64-raspi-v1; dock_archive=aros-aarch64-abiv1-raspi
     # The same contrib curl and OpenSSL as x86_64-v1, from the Pi contrib SDK.
     # -lpthread is named although curl pulls it in: collect-aros only lists
     # the init/exit sets of archive members it sees on the command line, and

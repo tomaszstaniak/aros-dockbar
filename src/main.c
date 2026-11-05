@@ -56,6 +56,7 @@
 #include "fontfile.h"
 #include "command.h"
 #include "version.h"
+#include "migrate.h"
 #include "present.h"
 #include "alpha.h"
 
@@ -3248,6 +3249,12 @@ int main(int argc,char **argv) {
    EasyRequestArgs(NULL,&failed,NULL,NULL);
   }
  } else note("FAIL libraries");
+ /* 0.5.1 had a second apkg package, dockbar-info-only; dockbar replaces it
+  * since 0.5.2, and apkg keeps the user's files in the old drawer. Take its
+  * settings over once, when this drawer has none yet. */
+ if(!state_given && !strcmp(app.config,"PROGDIR:docks.config") && !strcmp(app.pins,"PROGDIR:dock.pins") &&
+    !strcmp(app.legacy_config,"PROGDIR:dock.config"))
+  dock_migrate_from_sibling("dockbar","dockbar-info-only",note);
  /* Widgets were called applets before 0.5-test3: a drawer from an earlier
   * build is still used when the new one is not there. */
  if(!widgets_given && !object_exists("PROGDIR:Widgets") && object_exists("PROGDIR:Applets"))applets="PROGDIR:Applets";

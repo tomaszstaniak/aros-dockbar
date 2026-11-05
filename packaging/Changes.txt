@@ -1,6 +1,23 @@
 Dockbar changes
 ===============
 
+0.5.2
+-----
+- Fixed: on AROS x86_64 mainline with stdc.library 0.51 or older
+  (nightly builds up to 31 October 2026), the Weather helper ended in a
+  Software Failure each time it finished a forecast update. Its thread
+  library called a stdc.library function that these systems do not
+  have. The helper now calls it only when the running stdc.library has
+  it (0.52 or newer); the thread library's clean-up still runs on every
+  system. The Raspberry Pi package made the same call and is fixed too.
+- One package per system, with SVG icons. The .info-only packages of
+  0.5.1 are not continued; programs without an SVG icon still show their
+  .info icon.
+- Installed with apkg, dockbar now replaces dockbar-info-only. On its
+  first start Dockbar copies docks.config, dock.pins and WidgetState
+  from the dockbar-info-only drawer, when its own drawer has none of
+  them yet. The old drawer is not changed.
+
 0.5.1
 -----
 - Replaces 0.5, which was withdrawn before it was published: its

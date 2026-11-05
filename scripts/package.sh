@@ -1,7 +1,9 @@
 #!/bin/sh
-# Builds the tester archives from an existing scripts/build.sh output.
-# Two variants: with the SVG renderer, and .info-only (no SVG renderer;
-# FreeType for smooth text is in both).
+# Builds the release archive from an existing scripts/build.sh output: the
+# package with the SVG renderer. Since 0.5.2 that is the only published
+# variant. DOCK_SVG=0 builds the .info-only archive instead (no SVG
+# renderer; FreeType for smooth text is in both), for builds without
+# svgicon.library.
 set -eu
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 . "$repo/scripts/target.sh"
@@ -11,7 +13,7 @@ mkdir -p "$dist"
 dist=$(CDPATH= cd -- "$dist" && pwd)  # zip runs from inside the work tree
 version=$(sed -n 's/^#define DOCK_VERSION "\(.*\)"$/\1/p' "$repo/src/version.h")
 [ -n "$version" ] || { echo "No DOCK_VERSION in src/version.h" >&2; exit 1; }
-# DOCK_SVG=0 builds only the .info-only archive, without the renderer inputs.
+# DOCK_SVG=0: only the .info-only archive, without the renderer inputs.
 svg=${DOCK_SVG:-1}
 if [ "$svg" = 1 ]; then
   svgrev=${SVGICON_REVISION:?Set SVGICON_REVISION to the aros-svg-icons commit the library was built from}
@@ -247,9 +249,8 @@ open(sys.argv[1],"w").write(t.replace(old, "- Weather:", 1))' "$app/ReadMe" || e
     cp "$work/$1.zip" "$dist/$1.zip"
   fi
 }
-archives="$base-info-only.zip"
-variant "$base-info-only" 0
-if [ "$svg" = 1 ]; then variant "$base" 1; archives="$base.zip $archives"; fi
+if [ "$svg" = 1 ]; then variant "$base" 1; archives="$base.zip"
+else variant "$base-info-only" 0; archives="$base-info-only.zip"; fi
 # shellcheck disable=SC2086  # archive names contain no spaces
 # SHA256SUMS covers every archive in dist/, not only this run's.
 (cd "$dist" && shasum -a 256 *.zip > SHA256SUMS && grep -F -f /dev/stdin SHA256SUMS) <<EOF2

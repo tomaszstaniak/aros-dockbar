@@ -1,8 +1,7 @@
 AROS for Raspberry Pi (aarch64, mainline ABIv1). Tested only under QEMU
 (raspi3b) on the nightly of 2026-10-29, not on a real Raspberry Pi.
-The package with SVG support has libs/svgicon.library built for this
-target; the .info-only package shows the programs' own .info icons.
-Both packages include Weather (Widgets drawer); Weather needs a running
-TCP/IP stack for its data. See-through docks are composed on this
+The package has libs/svgicon.library built for this target and
+includes Weather (Widgets drawer); Weather needs a running TCP/IP stack
+for its data. See-through docks are composed on this
 system, as on mainline AROS for PC. The rest of this ReadMe also
 describes the x86_64 packages.

@@ -17,7 +17,7 @@ for lib in libcurl.a libssl.a libcrypto.a; do
   }
 done
 [ -f "$AROS_SDK/include/curl/curl.h" ] || { echo "Weather for $dock_target needs curl/curl.h in $AROS_SDK/include" >&2; exit 1; }
-WEATHER_CC="$AROS_CC" WEATHER_CFLAGS="--sysroot=$AROS_SDK -ffile-prefix-map=$repo=dockbar -ffile-prefix-map=$AROS_SDK=sdk" \
+WEATHER_CC="$AROS_CC" WEATHER_CFLAGS="--sysroot=$AROS_SDK -ffile-prefix-map=$repo=dockbar -ffile-prefix-map=$AROS_SDK=sdk $dock_weather_cflags" \
  WEATHER_LIBS="${WEATHER_TARGET_LIBS:-$dock_weather_libs}" \
  WEATHER_BUILD_DIR="$output/weather-provider" sh "$repo/scripts/build-weather.sh"
 # The static libraries' debug sections hold their build paths: strip them
@@ -42,5 +42,12 @@ else
   case "$syms" in *" __INIT_LIST__"*) ;; *) echo "$nm output of $provider has no __INIT_LIST__" >&2; exit 1 ;; esac
   orphans=$(printf '%s\n' "$syms" | awk '$3 ~ /^__aros_set_/ && $1 ~ /^0+$/ {print $3}')
   [ -z "$orphans" ] || { echo "Weather provider has init/exit set entries outside the lists (name the library on the link line):" $orphans >&2; exit 1; }
+  # libpthread calls __stdc_set_taskexit(), which older stdc.library 0.x
+  # systems do not have under the same version number. The provider's own
+  # definition (stdc_compat.c) must replace the SDK's weak stub.
+  if printf '%s\n' "$syms" | grep -q ' ____stdc_set_taskexit_StdCBase_wrapper$'; then
+    printf '%s\n' "$syms" | grep -q ' T __stdc_set_taskexit$' || {
+      echo "Weather provider uses the SDK stub of __stdc_set_taskexit; build stdc_compat.c with -DWEATHER_STDC_COMPAT" >&2; exit 1; }
+  fi
 fi
 python3 "$repo/scripts/stage-weather.py" --target "$dock_target" "$output/weather-provider/bin/WeatherProvider" "$output/package/Widgets"

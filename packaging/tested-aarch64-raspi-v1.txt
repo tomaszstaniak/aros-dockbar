@@ -1,5 +1,5 @@
 - Tested only on AROS for Raspberry Pi under QEMU (raspi3b, nightly of
   2026-10-29), with and without SMP, not on a real Raspberry Pi or with
-  sound. Weather was tested without SMP: under QEMU the SMP system binds
-  the network device to usbrndis.device, so a network set up for
-  usbcdceth.device does not start there.
+  sound. Under QEMU the emulated USB network device is taken by either
+  usbcdceth.device or usbrndis.device, depending on timing; a network set
+  up for one of them does not start when the other one took the device.
