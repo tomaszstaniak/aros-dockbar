@@ -56,7 +56,8 @@ repository (see the development guide).
 0.5.1 was tested under QEMU, not on real hardware: x86_64 mainline nightly
 of 3 November 2026, AROS One 2026.09, and the Raspberry Pi nightly of
 29 October 2026 (QEMU raspi3b) with and without SMP. The release notes list
-the known limitations. There is one horizontal dock, at most eight one-level
+the known limitations. On x86_64 mainline the Weather widget needs
+stdc.library 0.52 or newer (nightlies after 31 October 2026). There is one horizontal dock, at most eight one-level
 groups and no nested groups.
 
 ## Documentation
