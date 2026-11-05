@@ -4,10 +4,10 @@ An Amiga-style dock for AROS: launchers, groups, a Tools drawer, separators,
 hover labels, clocks, a Weather widget and SVG icons in a movable bar.
 Download the packages from the
 [releases page](https://github.com/tomaszstaniak/aros-dockbar/releases).
-Version 0.5.1 has packages for x86_64 mainline AROS (ABIv1, PC), x86_64
-ABIv11 (for example AROS One, PC) and AROS for Raspberry Pi (aarch64). Each
-target has a package with SVG icons and an `-info-only` package without the
-SVG renderer; both include Weather.
+Version 0.5.2 has one package each for x86_64 mainline AROS (ABIv1, PC),
+x86_64 ABIv11 (for example AROS One, PC) and AROS for Raspberry Pi
+(aarch64), with SVG icons and Weather. With apkg: `apkg update`, then
+`apkg install dockbar`.
 
 Click a launcher to open it, or drop an application icon from Wanderer to pin
 it. To create a group, drag an application onto the center of another dock
@@ -53,12 +53,11 @@ repository (see the development guide).
 
 ## Status
 
-0.5.1 was tested under QEMU, not on real hardware: x86_64 mainline nightly
-of 3 November 2026, AROS One 2026.09, and the Raspberry Pi nightly of
-29 October 2026 (QEMU raspi3b) with and without SMP. The release notes list
-the known limitations. On x86_64 mainline the Weather widget needs
-stdc.library 0.52 or newer (nightlies after 31 October 2026). There is one horizontal dock, at most eight one-level
-groups and no nested groups.
+0.5.2 was tested under QEMU, not on real hardware: x86_64 mainline
+nightlies of 31 October and 4 November 2026, AROS One 1.3, and the
+Raspberry Pi nightly of 29 October 2026 (QEMU raspi3b). The release notes
+list the known limitations. There is one horizontal dock, at most eight
+one-level groups and no nested groups.
 
 ## Documentation
 

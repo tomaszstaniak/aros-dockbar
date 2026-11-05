@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Dockbar's private resource pack: several files in one, readable only by
-src/pak.c. For licensed artwork that may ship inside the program but not as
-loose files that others could pick up and reuse. Not encryption: the bytes are
-scrambled so that the pack contains no recognisable PNG files.
+src/pak.c. Licensed artwork ships in it instead of as loose files. Not
+encryption: the bytes are scrambled so that the pack contains no recognisable
+PNG files.
 
 Format (little-endian): b"DKPAK1\\0\\0", u32 count, then per entry u32 name
 length, name (UTF-8), u32 offset, u32 size; then the data. Each entry's bytes

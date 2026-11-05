@@ -293,9 +293,9 @@ Without the drawer or any configuration the build uses the SVG placeholders and
 says so. The nine 128px
 day/night sprite pairs go only into generated packages, and only inside
 `assets/sprites.pak`, a private pack that Dockbar alone reads
-(`scripts/dockpak.py`, `src/pak.c`): the pack's licence allows the icons inside
-the program but not as loose files that others could extract and reuse. The
-licence text itself is not shipped; NOTICES and `assets/README-icons.txt` name
+(`scripts/dockpak.py`, `src/pak.c`), never as loose files. The pack is not
+encryption, and its format does not by itself decide what the artwork's
+licence allows. The licence text itself is not shipped; NOTICES and `assets/README-icons.txt` name
 the author and the restriction. Never commit the purchased sheets, the pack or
 the local path.
 
