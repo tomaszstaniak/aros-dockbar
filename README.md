@@ -21,18 +21,35 @@ apkg update
 apkg install dockbar
 ```
 
+## More within reach
+
+**Open drawers, not just shortcuts.** Keep a project folder, your downloads or
+system tools on the dock. Open it as a panel, browse its subdrawers and launch
+files from there. The panel follows changes in the drawer, so new files appear
+without rebuilding a list of shortcuts.
+
+**Drop files onto the app you want.** Set a launcher to open dropped files,
+then drop a document onto your editor or viewer. Commands and scripts can also
+accept dropped files — useful for actions you repeat often.
+
+**Keep related tools together.** Hold one application over another to make a
+group. Open the group as a grid, and drag shortcuts into, out of or between docks.
+
+**Keep the forecast on your desktop.** The Weather widget shows the current
+conditions and temperature on the dock. Click it for an hourly forecast and the
+next five days. Add a clock alongside it. Widgets bring information and controls
+to the dock; Weather is the included widget, with a package format for developers
+to add more.
+
 ## Make it yours
 
-Drop an application from Wanderer onto the dock to add it. Click to launch,
-or drag items to rearrange them. Hold one application over another to create
-a group. Drawers can open as a panel, so their contents are always close by.
+Drop an application from Wanderer onto the dock to pin it. Drag items to reorder
+them, choose your own icons, and arrange horizontal or vertical docks around your
+desktop. Choose a solid background, transparency, or just the icons.
 
-Add a clock or Weather, choose your icons, and arrange docks along your desktop.
-Use a background, transparency, or just the icons.
-
-Drag the grip to move a dock. Click it for Preferences and the menu, or
-Shift-click an item to edit it. Removing a shortcut leaves the original
-application or file untouched.
+Drag the grip to move a dock and click it for Preferences and the menu.
+Shift-click an item to edit it. Removing a shortcut leaves the original file
+untouched.
 
 ## A closer look
 

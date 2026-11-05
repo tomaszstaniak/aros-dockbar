@@ -1,0 +1,29 @@
+# Source for the application.json shipped inside the Dockbar drawer.
+id = "dockbar"
+revision = 2
+arch = "x86_64"
+abi = "v1"
+
+[launch]
+executable = "Dockbar"
+mode = "workbench"
+
+[[requires_system]]
+type = "library"
+id = "posixc.library"
+
+[[requires_system]]
+type = "library"
+id = "stdc.library"
+
+[[requires_system]]
+type = "library"
+id = "stdcio.library"
+
+[[requires_system]]
+type = "library"
+id = "muimaster.library"
+
+[[requires_system]]
+type = "library"
+id = "cybergraphics.library"

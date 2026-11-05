@@ -225,6 +225,7 @@ open(sys.argv[1],"w").write(t.replace(old, "- Weather:", 1))' "$app/ReadMe" || e
   cp "$repo"/assets/tabler/*.svg "$repo/assets/tabler/LICENSE" "$repo/assets/tabler/provenance.json" "$app/assets/tabler/"
   printf '\nTabler Icons — MIT. Original SVGs from tabler/tabler-icons; see assets/tabler/provenance.json.\n\n' >> "$app/NOTICES"
   cat "$repo/assets/tabler/LICENSE" >> "$app/NOTICES"
+  python3 "$repo/scripts/application-manifest.py" "$dock_target" "$version" "$app/application.json"
   chmod 755 "$app/Dockbar"
   find "$root" -exec touch -t "$stamp" {} +
   # No file of a package may carry the build machine's paths: they name
