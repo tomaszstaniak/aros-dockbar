@@ -1,71 +1,55 @@
 # AROS Dockbar
 
-An Amiga-style dock for AROS: launchers, groups, a Tools drawer, separators,
-hover labels, clocks, a Weather widget and SVG icons in a movable bar.
-Download the packages from the
-[releases page](https://github.com/tomaszstaniak/aros-dockbar/releases).
-Version 0.5.2 has one package each for x86_64 mainline AROS (ABIv1, PC),
-x86_64 ABIv11 (for example AROS One, PC) and AROS for Raspberry Pi
-(aarch64), with SVG icons and Weather. With apkg: `apkg update`, then
-`apkg install dockbar`.
+An Amiga-style dock for your applications, files and widgets.
 
-Click a launcher to open it, or drop an application icon from Wanderer to pin
-it. To create a group, drag an application onto the center of another dock
-application, pause for the grouping highlight, and release. Groups show
-miniature previews and open a launch grid. Drag items to reorder them or move
-them into and out of groups. The Tools item opens `SYS:Tools` in Wanderer; it
-is a filesystem drawer, separate from curated groups.
+![Dockbar with the Weather card open on AROS One](docs/screenshots/weather-aros-one.png)
 
-Drag the left grip to move the dock; its position is saved when released.
-Click the grip for its menu: Preferences (icon size, corner radius, position
-lock), About and Quit. Only one copy runs at a time.
-Shift-click an item, right-click it in the active dock or group panel, or use
-the panel's **Edit** button to edit a group. The Zune/MUI editor changes the name and
-optional `.info` or SVG icon. **Remove** deletes the shortcut; removing a group
-also removes its contained shortcuts. Applications and files remain on disk.
+*Your launchers and the forecast, together on the desktop.*
 
-Composition and position are saved in `PROGDIR:docks.config` by default. See
-[usage and configuration](docs/development.md) for controls, migration from
-legacy pins, and recovery behavior.
+## Get Dockbar
 
-Native ARGB and indexed icons use an application-local alpha-aware Lanczos
-filter with separate normal and selected caches. Small sources are not
-enlarged. Pure planar icons retain system drawing and downscaling. SVG icons
-are rendered at the requested size. The bar and grid work on a stock system with
-no patched system library. Their rounded outlines use Intuition shape regions; the item editor uses stock Zune controls and follows the system theme.
+[Download Dockbar 0.5.2](https://github.com/tomaszstaniak/aros-dockbar/releases/tag/v0.5.2)
+for mainline AROS on PC, AROS One / ABIv11 on PC, or Raspberry Pi.
+Every package includes SVG icons and Weather.
 
-## Build
+Unpack the archive and open **Dockbar**. Keep the whole Dockbar drawer together.
 
-Configure the matching compiler, SDK and, optionally, the separate SVG
-renderer (`SVGICON_LIBRARY=none` builds without it):
+You can also install it with [arospkg](https://github.com/tomaszstaniak/arospkg):
 
 ```sh
-./scripts/test-host.sh
-DOCK_TARGET=x86_64-abiv11 ./scripts/build.sh   # or x86_64-v1, aarch64-raspi-v1
+apkg update
+apkg install dockbar
 ```
 
-The test package is written to `build/<target>/package/`; the build stops
-when the compiler and SDK are not of the target's ABI. The
-[development guide](docs/development.md) lists the environment variables and
-runtime options. The public sources contain SVG placeholders for the Weather
-icons; the released packages use licensed artwork that is not in this
-repository (see the development guide).
+## Make it yours
 
-## Status
+Drop an application from Wanderer onto the dock to add it. Click to launch,
+or drag items to rearrange them. Hold one application over another to create
+a group. Drawers can open as a panel, so their contents are always close by.
 
-0.5.2 was tested under QEMU, not on real hardware: x86_64 mainline
-nightlies of 31 October and 4 November 2026, AROS One 1.3, and the
-Raspberry Pi nightly of 29 October 2026 (QEMU raspi3b). The release notes
-list the known limitations. There is one horizontal dock, at most eight
-one-level groups and no nested groups.
+Add a clock or Weather, choose your icons, and arrange docks along your desktop.
+Use a background, transparency, or just the icons.
 
-## Documentation
+Drag the grip to move a dock. Click it for Preferences and the menu, or
+Shift-click an item to edit it. Removing a shortcut leaves the original
+application or file untouched.
 
-- [Development and usage](docs/development.md)
-- [SVG dependency and packaging scope](docs/svg-dependency.md)
-- [Original runtime assets](assets/README.md)
+## A closer look
 
-Project code and icons are original and under the MIT license (`LICENSE`).
-Bundled dependencies and artwork keep their own terms, listed in the
-package's NOTICES; see the SVG dependency notes for the separate renderer's
-provenance.
+| Weather | Drawers |
+| --- | --- |
+| ![Light Weather card on mainline AROS](docs/screenshots/weather-mainline.png) | ![Preferences drawer opened as an icon grid](docs/screenshots/drawer-panel.png) |
+| Current conditions, an hourly forecast and the next five days. | Browse a drawer, open its files, or continue in Wanderer. |
+
+Weather screenshots show 0.5.2; the drawer panel is from 0.5-test12.
+
+## Help and development
+
+- **ReadMe** in the download covers setup and starting Dockbar with the system.
+- [Release notes](https://github.com/tomaszstaniak/aros-dockbar/releases/tag/v0.5.2) cover changes and system requirements.
+- [Development guide](docs/development.md) covers building, configuration and runtime options.
+- [SVG dependency](docs/svg-dependency.md) documents the renderer and packaging.
+
+Dockbar is MIT-licensed. Libraries and Weather artwork have their own terms,
+listed in the package's **NOTICES**. Public builds use placeholder Weather icons;
+the downloads include licensed artwork.
