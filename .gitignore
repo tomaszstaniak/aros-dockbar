@@ -35,3 +35,7 @@ __pycache__/
 /applets/org.aros.weather/purchased/
 # Optional override of that location; never publish the local path.
 /local-weather-assets.json
+
+# Local agent instructions.
+/[Aa][Gg][Ee][Nn][Tt][Ss].[Mm][Dd]
+/[Cc][Ll][Aa][Uu][Dd][Ee].[Mm][Dd]
