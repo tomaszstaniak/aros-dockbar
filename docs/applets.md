@@ -1,6 +1,6 @@
 ---
 type: guide
-updated: 2026-10-15
+updated: 2026-11-06
 ---
 
 # Widgets and Weather (experimental API 1)
@@ -17,14 +17,14 @@ stable binary plugin ABI.
 
 ## Install and use
 
-The standard ABIv11 Dockbar build already includes Weather in `Applets` beside
+The standard builds for PC v1, PC ABIv11 and Pi include Weather in `Widgets` beside
 Dockbar. Deploy the complete package drawer; copying only the executable omits
 bundled widgets and other assets. Build/asset configuration is described in
 [development](development.md#bundled-weather-build). Separate widget archives
 remain supported for installing or updating independently.
 
 Unpack the Weather archive and copy the `org.aros.weather` directory into
-`Applets` beside Dockbar. Keep the package directory intact. Open the grip menu,
+`Widgets` beside Dockbar. Keep the package directory intact. Open the grip menu,
 choose **Add widget...**, **Rescan**, select Weather and **Add**. The settings
 window opens after the item has been saved.
 
@@ -34,9 +34,7 @@ Fahrenheit, wind units, and a refresh interval of 15–60 minutes. **Save** appl
 only this instance. Adding another Weather item creates independent settings.
 No network request starts until a location is configured.
 
-The tile shows the condition icon, temperature and city. Click it for current
-metrics, the next 24 forecast hours, a temperature chart and seven daily rows.
-The panel scrolls when needed. **Refresh** requests new data (30-second manual
+The tile shows the condition icon and temperature; its tooltip identifies the location. Click it for current conditions, the next 24 forecast hours and five daily forecasts. **Refresh** requests new data (30-second manual
 cooldown); **Settings** edits that instance. Escape, Close or another click on
 the tile closes the panel. Right-click the tile to open its settings; **Remove
 widget** removes the instance for good: the shortcut, its settings and its
@@ -58,8 +56,7 @@ verifies servers with the CA bundle shipped in the widget (`certs/ca-bundle.crt`
 Mozilla's store), found through the package directory Dockbar names in the
 request, wherever the Dockbar drawer is. If that fails it tries the file named
 by `CURL_CA_BUNDLE` (when set), then the system's
-`ENV:SYS/Certificates/ca-bundle.crt`. A system date before October 2026 is
-named as the cause; other failures give the verification code, and the message
+`ENV:SYS/Certificates/ca-bundle.crt`. An implausibly early system date produces a hint to check the clock; other failures give the verification code, and the message
 says when the bundled file could not be read. Each request is logged in
 `WidgetState/weather.log` (bundled file found or not, curl code, verification
 result, CA file used). Verification is never turned off.
@@ -109,8 +106,7 @@ and instance ID survive reordering and moves. Duplicating a dock creates separat
 widget IDs and copies settings on first activation. Very long externally chosen
 instance IDs can prevent further dock duplication; generated IDs fit normally.
 
-Providers are selected by exact target, initially `x86_64-abiv11`. A Macaros or
-Pi host must not load that binary. Unavailable packages remain visible in the
+Providers are selected by exact target: the release supplies `x86_64-v1`, `x86_64-abiv11` and `aarch64-raspi-v1` variants. A host must not load a provider built for another target. Unavailable packages remain visible in the
 picker with a reason. Duplicate IDs disable both conflicting packages. The
 catalog is capped at 64 packages and reports overflow. Rescan reconciles existing
 instances after their outstanding worker finishes.
@@ -129,7 +125,7 @@ Required manifest keys:
   "id": "org.example.sample",
   "name": "Sample",
   "version": "0.1.0",
-  "description": "An example applet.",
+  "description": "An example widget.",
   "author": "Example author",
   "license": "MIT",
   "api": {"min": 1, "max": 1},
@@ -199,7 +195,7 @@ last good snapshot on errors. Settings edits invalidate the old generation.
 The host retains at most four outstanding workers, one per instance. An
 instance removed from every dock is freed once no window shows it and no
 request of it is out; moving a widget keeps the same instance and its data. Scheduling
-uses 64-bit elapsed EClock time, not the wall clock used to label acquisitions.
+uses the GetUpTime-based elapsed clock, with a guarded fallback when timer.device is unavailable. Calendar time is used separately to label acquisitions.
 Failures back off 1, 5 and 15 minutes.
 
 A request that is not answered within 60 seconds is ended: the instance is told
@@ -230,16 +226,14 @@ use the host fallback. The supplied SVG placeholders are original MIT artwork;
 they use the existing optional SVG renderer. Without it, the host placeholder
 still leaves temperature and city readable.
 
-This initial build uses static images. Animated assets will be connected after
-their actual format is supplied; no animation decoder is advertised by API 1.
-Keep semantic condition IDs stable when adding that capability.
+Animated sprite sheets are supported as described below. Keep semantic condition IDs stable when replacing artwork.
 
 ## Build and package
 
 Build the host-only provider with `./scripts/build-weather.sh`. Set `WEATHER_CC`,
 `WEATHER_CFLAGS`, `WEATHER_LIBS`, `WEATHER_BUILD_DIR` for a target build. For the
 ABIv11 2026.09 SDK, static link inputs are `-lcurl -lssl -lcrypto -lzstd
--lz.static -lm`. The host build does not require these provider dependencies.
+-lz.static -lm`. The host build requires curl development headers and libraries; its default link flags are `-lcurl -lm`.
 
 Package a built variant independently:
 
@@ -261,7 +255,7 @@ host HTTPS fetch does not establish AROS networking; native results require thei
 own ABI, SDK, machine and run evidence. Additional targets and artwork formats
 must be verified independently.
 
-### Experimental sprite sheets
+### Sprite sheets
 
 A condition may include optional `sprite` metadata beside its static `resource`:
 
@@ -288,8 +282,7 @@ Bounds: 4096×4096 sheet, 512×512 frame, 32 columns, 256 frames and 60 FPS.
 Configured FPS is a target; actual playback depends on the host and rendering load.
 The current Macaros build disables PNG decoding and uses the static resource.
 
-Compact widgets currently reserve seven digit-widths for their primary value plus
-icon/padding. Secondary information is available in the tooltip and details panel.
+Compact widgets reserve space for their primary value and icon. Secondary information is available in the tooltip and details panel.
 This stable compact width avoids resizing the dock whenever a value changes.
 
 Purchased artwork is supplied separately at build time and ships only inside
@@ -316,7 +309,7 @@ sections become available after a provider refresh. API version remains 1.
 The current weather package supplies local hour labels, named weekdays, readable
 condition descriptions and separate rain probabilities. Display metadata stays in
 its views.json; the host card renderer contains no weather provider or WMO logic.
-The main image uses the optional sprite animation; small row icons use static SVGs.
+The main image uses the optional sprite animation; row icons can use sprite frames, with static resources as a fallback.
 FreeType uses the system Vera Sans file when available, otherwise native text.
 The initial panel is 464×488 and requires sufficient screen space; smaller screens
 retain the generic details fallback. The panel buffers complete frames to avoid

@@ -13,5 +13,5 @@
   "submission_url": "https://github.com/aros-development-team/AROS/pull/2028",
   "submission_revision": "16972ae12aa46c3af5487b34d6f033aac514ee7d",
   "next_action": "Wait for maintainer review of PR 2028; recheck on the first nightly with it merged",
-  "note": "Covers patch 0003 only. Patches 0001 and 0002 are the unsubmitted backdrop blur prototype; see docs/current-state/aros-patches.md. 2026-11-03: in-tree compiler-stdcio (pc-x86_64, GCC 10.5.0) built at 16972ae1, rc 0, no warnings or implicit declarations in __stdio.c; docs/evidence/svgicon-exceptions-20261101/pr2028-intree-build.md."
+  "note": "Covers patch 0003 only. Patches 0001 and 0002 are the unsubmitted backdrop blur prototype. 2026-11-03: in-tree compiler-stdcio (pc-x86_64, GCC 10.5.0) built at 16972ae1, rc 0, no warnings or implicit declarations in __stdio.c."
 }

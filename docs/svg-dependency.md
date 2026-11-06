@@ -18,7 +18,7 @@ inline vectors, then `CloseLibrary` on shutdown.
 The development dependency consists of two separately supplied inputs:
 
 - Generated headers from the dependency's `build/svgiconlib/gen/include/` tree.
-- Its matching x86_64 ABIv11 `build/svgiconlib/svgicon.library` binary.
+- Its matching target-specific `svgicon.library` binary (PC v1, PC ABIv11 or Pi aarch64).
 
 A reusable development kit may place them under `include/` and
 `libs/svgicon.library`. Preserve the include subdirectories; a single copied
@@ -27,16 +27,7 @@ and configure its paths locally. Stage only the binary into the application's
 `libs/` drawer. Do not copy the dependency's source workspace, private documents,
 patched `icon.library`, or build tools into the application package.
 
-The interface inspected for this prototype is `aros-svg-icons` revision
-`d08d2f8b7d56a469586e325b26e4211527f32254`, library interface 0.1. The inspected
-local development binary has SHA-256:
-
-```text
-4c37ce0783171f07ab6e347f452cae78ecafc34e028be2a9498156cc93ad5772
-```
-
-Record the actual dependency hash with each local build. This hash identifies
-the inspected binary; it is not a claim of a reproducible rebuild.
+Keep the library's `BUILDINFO` alongside it. Packaging checks its target, revision and checksum against the configured inputs and [provenance pins](../packaging/svg-provenance.txt). Do not reuse a binary from another ABI or architecture.
 
 ## Ownership and limits
 
@@ -57,41 +48,12 @@ not query global library statistics. Repeated painting of a cached icon must
 leave this count unchanged.
 
 Input-size and output-size limits do not establish safety for arbitrary hostile
-SVG content. The present prototype uses its own small runtime assets; the
-renderer retains its own documented implementation limitations.
+SVG content. The renderer retains its own documented implementation limitations.
 
-## Provenance and packaging scope
+## Provenance and packaging
 
-The dependency pins LunaSVG, including bundled PlutoVG, at
-`cf3594d5232e075fb344365191f0ecadd1519e1e`. Both checked dependency LICENSE files
-state MIT, copyright 2020–2026 Samuel Ugochukwu. Keep their full notices when
-preparing a redistributable dependency package. Generated headers carry AROS
-Development Team notices. The inspected `aros-svg-icons` wrapper has no
-repository-wide license file; a public redistribution package therefore still
-needs an explicit wrapper license and a review of its bundled runtime notices.
-This prototype defines local development staging, not a public dependency SDK.
+The aros-svg-icons wrapper is MIT-licensed. LunaSVG and its bundled PlutoVG are also MIT-licensed; their pinned revision is recorded in `packaging/svg-provenance.txt`. Preserve all notices, including the AROS interface notices and the GCC or LLVM runtime terms for the selected target. The package includes these dependency notices separately from Dockbar's licence.
 
-`assets/runtime/folder.svg`, `terminal.svg`, and `compass.svg` are original vector
-art created for this project. They contain no copied Docky, system, or third-party
-icon artwork, embedded raster images, fonts, scripts, or external resources.
+The build and packaging scripts check ABI compatibility, BUILDINFO, renderer revision and licence provenance. They do not replace runtime checks of C++ exception handling; those probes belong to aros-svg-icons. See [packaging requirements](development.md#packaging).
 
-Verification on 2026-10-13: the adapter compiled and linked with x86_64-aros-gcc
-and the ABIv11 2026.09 SDK, without an SVG link library. Host checks exercised
-input limits, missing files, parse/render failures, cleanup and counters with
-sanitizers. The existing host renderer rendered all three assets at 24, 48, 72
-and 128 pixels with transparent corners and partially transparent edge pixels.
-Separate native application checks confirmed the folder icon at48/64px, constant
-render count during ordinary redraws, and native fallback for missing/invalid SVG
-or library. See [development verification](development.md#checks-and-current-scope).
-No performance benchmark is claimed.
-
-Mainline (x86_64-v1): aros-svg-icons builds a separate `svgicon.library` for
-mainline (`scripts/build-svgiconlib.sh v1`), with the mainline compiler, SDK and
-genmodule. `scripts/build.sh` and `scripts/package.sh` refuse a library or
-generated headers built for the other ABI (the library's C runtime bases and the
-`BUILDINFO` written next to it tell them apart), a mainline library without
-libgcc's register size table, and a library whose `BUILDINFO` revision differs
-from `SVGICON_REVISION`. Packaging also checks the renderer's provenance against
-`packaging/svg-provenance.txt` (see development.md, "Tester archives"). That the
-mainline library's C++ exceptions are caught at run time is checked by a
-developer probe in aros-svg-icons (`tests/exctest/`), not by these scripts.
+Original Dockbar artwork is described in the [asset guide](../assets/README.md). The optional renderer is a general SVG library; it does not require the purchased Weather artwork.

@@ -20,7 +20,7 @@ checks covered 24, 48, 72 and 128 px; native application verification currently
 covers 48 px. Native application `.info` icons are loaded from the target system
 and are not redistributed in this asset directory.
 
-No project-wide license has yet been selected for these original assets.
+The original assets use the project's [MIT licence](../LICENSE).
 Dependency notices are described in [the SVG guide](../docs/svg-dependency.md).
 
 ## Tabler UI controls
@@ -28,8 +28,7 @@ Dependency notices are described in [the SVG guide](../docs/svg-dependency.md).
 `tabler/` contains five unmodified outline SVGs from Tabler Icons, by Paweł Kuna,
 under the MIT license in `tabler/LICENSE`. The upstream revision and selected file
 names are recorded in `tabler/provenance.json`. These licensed assets are separate
-from the original artwork above. All distributions copy the complete notice and
-license; this does not select or change the license of Dockbar itself.
+from the original artwork above. Distributions include the complete Tabler notice and licence.
 
 The build rasterises these SVGs into 20 px coverage masks
 (`scripts/tabler-masks.py`, compiled into Dockbar), and the card tints them to

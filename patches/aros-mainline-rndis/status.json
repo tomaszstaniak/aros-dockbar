@@ -28,8 +28,8 @@
     "network traffic over the resulting cdceth binding not tested on x86_64",
     "only other configurations and their base interfaces are checked; cdceth.class also considers alternate settings, to be discussed in review"
   ],
-  "evidence": "private: docs/evidence/pi-network-20261104 in the Dockbar workspace",
-  "local_workaround": "pool rpi-1 SYS:Pool/start picks SYS:Pool/netdb or SYS:Pool/netdb-rndis by the bound class (both variants, 2026-11-04)",
+  "evidence": "https://github.com/aros-development-team/AROS/pull/2098",
+  "local_workaround": "Select the network configuration for usbcdceth.device or usbrndis.device according to the driver that actually bound the USB device.",
   "next_action": "Follow PR #2098 review. When a Pi nightly with the merged fix is installed, the pool netdb-rndis fallback can stay as harmless or be removed after checking.",
   "last_review": "2026-11-04"
 }

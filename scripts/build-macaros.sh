@@ -1,7 +1,7 @@
 #!/bin/sh
 # Dockbar for Macaros (hosted aarch64 AROS on macOS, mainline v1 based).
 # No FreeType there: Smooth text falls back to the system font. No SVG icons.
-# Source ~/Work/AROS-dev/macaros/env.sh first (sets BUILD and XT).
+# Set BUILD to the Macaros build tree and XT to its LLVM toolchain.
 set -eu
 : "${BUILD:?Source the Macaros env.sh first}"
 : "${XT:?Source the Macaros env.sh first}"
