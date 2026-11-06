@@ -1,4 +1,4 @@
-- Tested only on mainline AROS x86_64 under QEMU (nightly builds of
-  2026-10-31 and 2026-11-04; earlier versions also on builds of September
-  and October 2026), not on real hardware, ABIv11 systems such as AROS
+- Tested only on mainline AROS x86_64 under QEMU (nightly build of
+  2026-11-05; earlier versions also on builds of September, October and
+  early November 2026), not on real hardware, ABIv11 systems such as AROS
   One, i386, Raspberry Pi or other systems.
