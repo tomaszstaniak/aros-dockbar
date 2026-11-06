@@ -198,14 +198,6 @@ open(sys.argv[1],"w").write(t.replace(key, add + key, 1))' "$readme_w" "$wlic" |
   [ -f "$tested" ] || tested="$repo/packaging/tested-x86_64-abiv11.txt"
   fill "$work/readme1" @REQUIREMENTS@ "$(cat "$repo/packaging/requirements-$target.txt")" > "$work/readme2"
   fill "$work/readme2" @TESTED@ "$(cat "$tested")" > "$app/ReadMe"
-  # The ReadMe's Weather entry names the PC packages; the Pi package has
-  # Weather too. Only the Pi ReadMe changes, so the PC packages stay as built.
-  if [ "$target" = aarch64-raspi-v1 ]; then
-    python3 -c 'import sys
-t=open(sys.argv[1]).read(); old="- Weather (x86_64 package only):"
-if old not in t: sys.exit("ReadMe has no \"" + old + "\" line")
-open(sys.argv[1],"w").write(t.replace(old, "- Weather:", 1))' "$app/ReadMe" || exit 1
-  fi
   libs_text=$(cut -d'|' -f2 "$repo/packaging/build-$target.txt" | tail -1)
   fill "$repo/packaging/NOTICES.txt" @SVGNOTICE@ "$notice" | sed "s|@LIBS@|$libs_text|" > "$work/notices1"
   # A target without FreeType (libraries "-") has no Smooth text section.

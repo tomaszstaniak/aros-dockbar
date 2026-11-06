@@ -115,7 +115,12 @@ static int remove_tree(const char *p, int depth) {
       names = grown;
       cap = next;
     }
-    snprintf(names[count++], sizeof *names, "%s", e->d_name);
+    size_t n = strlen(e->d_name);
+    if (n >= sizeof *names) {
+      ok = 0;
+      break;
+    }
+    memcpy(names[count++], e->d_name, n + 1);
   }
   closedir(d);
   /* Paths on the heap: Dockbar runs this on its own (Shell-sized) stack. */
