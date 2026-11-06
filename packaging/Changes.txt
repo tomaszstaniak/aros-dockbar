@@ -1,6 +1,22 @@
 Dockbar changes
 ===============
 
+0.6.0
+-----
+- Other programs can install their own widget into a running Dockbar.
+  Dockbar checks that the widget is made for this system, copies it into
+  the Widgets drawer it uses (also one chosen with --widgets) and asks
+  whether to add it to a dock, with a dock choice when there are several.
+  Installing it again updates it; its settings and the docks are not
+  changed. A drawer in Widgets that Dockbar did not install is never
+  replaced or deleted. For programmers: docs/applets.md and the header
+  include/dockbar/widgets.h in the source.
+- Action widgets: a widget can show only its icon and offer a few
+  actions. Click it, choose an action, and the widget runs once for it.
+  Such a widget never runs by itself: not at start, not on a schedule,
+  not after Refresh or a settings change.
+- Existing widgets such as Weather work as before.
+
 0.5.2
 -----
 - Fixed: on AROS x86_64 mainline with stdc.library 0.51 or older
