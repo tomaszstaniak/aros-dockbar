@@ -8,7 +8,7 @@ An Amiga-style dock for your applications, files and widgets.
 
 ## Get Dockbar
 
-[Download Dockbar 0.5.2](https://github.com/tomaszstaniak/aros-dockbar/releases/tag/v0.5.2)
+[Download Dockbar 0.6.0](https://github.com/tomaszstaniak/aros-dockbar/releases/tag/v0.6.0)
 for mainline AROS on PC, AROS One / ABIv11 on PC, or Raspberry Pi.
 Every package includes SVG icons and Weather.
 
@@ -41,6 +41,11 @@ next five days. Add a clock alongside it. Widgets bring information and controls
 to the dock; Weather is the included widget, with a package format for developers
 to add more.
 
+**Add widgets from other programs.** An application can install its own widget
+into a running Dockbar. Dockbar checks that the widget fits your system, copies
+it into its Widgets drawer and asks which dock to put it on. Some widgets show
+only an icon with a few actions, and run only when you choose one.
+
 ## Make it yours
 
 Drop an application from Wanderer onto the dock to pin it. Drag items to reorder
@@ -63,7 +68,7 @@ Weather screenshots show 0.5.2; the drawer panel is from 0.5-test12.
 ## Help and development
 
 - **ReadMe** in the download covers setup and starting Dockbar with the system.
-- [Release notes](https://github.com/tomaszstaniak/aros-dockbar/releases/tag/v0.5.2) cover changes and system requirements.
+- [Release notes](https://github.com/tomaszstaniak/aros-dockbar/releases/tag/v0.6.0) cover changes and system requirements.
 - [Development guide](docs/development.md) covers building, configuration and runtime options.
 - [SVG dependency](docs/svg-dependency.md) documents the renderer and packaging.
 

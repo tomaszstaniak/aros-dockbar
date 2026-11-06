@@ -1,6 +1,6 @@
 # Source for the application.json shipped inside the Dockbar drawer.
 id = "dockbar"
-revision = 2
+revision = 1
 arch = "x86_64"
 abi = "v1"
 

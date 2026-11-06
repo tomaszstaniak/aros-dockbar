@@ -128,8 +128,9 @@ Using a dock
   into a running Dockbar. Dockbar checks that the widget is made for this
   system, copies it into its Widgets drawer and asks whether to add it to
   a dock. Installing it again updates it; its settings and your docks stay
-  as they are. A drawer in Widgets that Dockbar did not install is never
-  replaced. Some widgets show only an icon: click it and choose what the
+  as they are. An installed widget with the same ID is updated, also one
+  copied in by hand; any other drawer in the way is left alone, and
+  Dockbar refuses and names it. Some widgets show only an icon: click it and choose what the
   widget should do. Such a widget runs only when you choose one of its
   actions, never by itself.
 - Drawers: right-click a drawer item and set "Open on click" to

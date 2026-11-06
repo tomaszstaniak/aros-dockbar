@@ -104,7 +104,7 @@ The versioned configuration stores dock layouts, appearance, items, groups and w
 
 SVG icons are rendered at the requested size and cached. Missing libraries or invalid images fall back to native icons or placeholders. Native ARGB and indexed icons use application-local filtering; planar icons use the native drawing path.
 
-On systems supporting window composition, Dockbar supplies an alpha surface and the system updates the background behind it. Other systems use a captured desktop background. `--no-compose` selects this fallback explicitly. Live compositor backdrop blur and running-application indicators are separate development work, not features of the 0.5.2 release.
+On systems supporting window composition, Dockbar supplies an alpha surface and the system updates the background behind it. Other systems use a captured desktop background. `--no-compose` selects this fallback explicitly. Live compositor backdrop blur and running-application indicators are separate development work, not features of the 0.6.0 release.
 
 ## Checks
 

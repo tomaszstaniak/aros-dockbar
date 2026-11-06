@@ -8,8 +8,12 @@ Dockbar changes
   the Widgets drawer it uses (also one chosen with --widgets) and asks
   whether to add it to a dock, with a dock choice when there are several.
   Installing it again updates it; its settings and the docks are not
-  changed. A drawer in Widgets that Dockbar did not install is never
-  replaced or deleted. For programmers: docs/applets.md and the header
+  changed. An installed widget with the same ID is updated, also one
+  copied in by hand; any other drawer in the way is left alone, and
+  Dockbar refuses and names it. If the new copy cannot be put in place,
+  the installed widget stays; should putting it back fail too, it is kept
+  as .<ID>.old in the Widgets drawer, Dockbar says so, and the next
+  install puts it back. For programmers: docs/applets.md and the header
   include/dockbar/widgets.h in the source.
 - Action widgets: a widget can show only its icon and offer a few
   actions. Click it, choose an action, and the widget runs once for it.
