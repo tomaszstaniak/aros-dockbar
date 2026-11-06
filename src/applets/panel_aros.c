@@ -37,6 +37,10 @@ static struct {
   unsigned long shown_generation;
 } ui;
 static struct DockAppletRuntime *last_instance;
+/* The offer after an install: the package and the dock chosen for it. */
+static char offer_id[DA_ID];
+static const char *offer_docks[17];
+static int offered_dock = -1;
 static Object *attach(struct Library *MUIMasterBase, Object *parent,
                       Object *child) {
   if (!child)
@@ -114,8 +118,10 @@ static int begin(struct Screen *screen, const char *title, int mode) {
     goto fail;
   ui.window = obj(MUIC_Window, MUIA_Window_Title, (IPTR)title,
                   MUIA_Window_Screen, (IPTR)screen, MUIA_Window_RootObject,
-                  (IPTR)ui.body, MUIA_Window_Width, 560, MUIA_Window_Height,
-                  mode == 2 ? 470 : 330, TAG_DONE);
+                  (IPTR)ui.body, MUIA_Window_Width,
+                  mode >= 3 ? MUIV_Window_Width_Default : 560, MUIA_Window_Height,
+                  mode == 2 ? 470 : mode >= 3 ? MUIV_Window_Height_Default : 330,
+                  TAG_DONE);
   if (!ui.window)
     goto fail;
   if (!DoMethod(ui.application, OM_ADDMEMBER, (IPTR)ui.window))
@@ -392,6 +398,75 @@ int dock_applet_ui_open(struct Screen *screen, struct DockAppletRuntime *r,
   }
   return show();
 }
+/* An action widget (API 2): one button per action. The window closes
+ * before the action starts, so it is not in what the action does. */
+int dock_applet_ui_actions(struct Screen *screen, struct DockAppletRuntime *r) {
+  if (!r)
+    return 0;
+  if (ui.runtime == r && ui.mode == 3) {
+    dock_applet_ui_close();
+    return 1;
+  }
+  snprintf(ui.title, sizeof ui.title, "%s", r->package.name);
+  char title[200];
+  snprintf(title, sizeof title, "%.190s", r->package.name);
+  clean(title);
+  if (!begin(screen, title, 3))
+    return 0;
+  ui.runtime = r;
+  last_instance = r;
+  ui.shown_generation = r->state.view_revision;
+  struct Library *MUIMasterBase = ui.base;
+  Object *buttons = attach(MUIMasterBase, ui.body, obj(MUIC_Group, TAG_DONE));
+  for (int i = 0; buttons && i < r->package.action_count; i++)
+    button(MUIMasterBase, buttons, r->package.action_label[i], 100 + i);
+  Object *row = attach(MUIMasterBase, ui.body,
+                       obj(MUIC_Group, MUIA_Group_Horiz, TRUE, TAG_DONE));
+  struct DockAppletForm form;
+  char error[160];
+  if (dock_applet_load_form(r, &form, error, sizeof error) && form.count)
+    button(MUIMasterBase, row, "Settings", 6);
+  button(MUIMasterBase, row, "Close", 99);
+  snprintf(ui.message, sizeof ui.message, "%s",
+           !r->package.available     ? r->package.reason
+           : dock_applet_acting(r)   ? "Busy..."
+                                     : r->state.snapshot.message);
+  clean(ui.message);
+  return show();
+}
+int dock_applet_ui_offer(struct Screen *screen, const char *id,
+                         const char *name, const char *const *docks,
+                         int count) {
+  char line[180];
+  if (!begin(screen, "Dockbar", 4))
+    return 0;
+  struct Library *MUIMasterBase = ui.base;
+  snprintf(offer_id, sizeof offer_id, "%s", id);
+  snprintf(line, sizeof line, "%.80s is installed. Add it to %s?", name,
+           count > 1 ? "a dock" : "the dock");
+  clean(line);
+  memcpy(ui.title, line, sizeof line);
+  attach(MUIMasterBase, ui.body, text(MUIMasterBase, ui.title));
+  if (count > 1) {
+    int n = count < 16 ? count : 16;
+    for (int i = 0; i < n; i++)
+      offer_docks[i] = docks[i];
+    offer_docks[n] = NULL;
+    ui.selection = attach(MUIMasterBase, ui.body,
+                          obj(MUIC_Cycle, MUIA_Cycle_Entries, (IPTR)offer_docks,
+                              MUIA_CycleChain, TRUE, TAG_DONE));
+  }
+  Object *row = attach(MUIMasterBase, ui.body,
+                       obj(MUIC_Group, MUIA_Group_Horiz, TRUE, TAG_DONE));
+  button(MUIMasterBase, row, "Add", 20);
+  button(MUIMasterBase, row, "Not now", 99);
+  return show();
+}
+int dock_applet_ui_offered_dock(void) {
+  int d = offered_dock;
+  offered_dock = -1;
+  return d;
+}
 int dock_applet_ui_open_at(struct Screen *screen,struct DockAppletRuntime *r,
  int x,int y,int w,int h,int vertical,const struct DockColors *colors){
  if(!r)return 0;
@@ -410,6 +485,16 @@ int dock_applet_ui_poll(uint64_t now, char *selected, size_t cap) {
   }
   if (!ui.application)
     return 0;
+  if (ui.mode == 3 && ui.runtime &&
+      ui.shown_generation != ui.runtime->state.view_revision) {
+    ui.shown_generation = ui.runtime->state.view_revision;
+    char now_text[200];
+    snprintf(now_text, sizeof now_text, "%s",
+             dock_applet_acting(ui.runtime) ? "Busy..."
+                                            : ui.runtime->state.snapshot.message);
+    clean(now_text);
+    message(now_text);
+  }
   if (ui.mode == 2 && ui.runtime &&
       ui.shown_generation != ui.runtime->state.view_revision) {
     struct DockAppletRuntime *r = ui.runtime;
@@ -443,6 +528,25 @@ int dock_applet_ui_poll(uint64_t now, char *selected, size_t cap) {
   if (action == MUIV_Application_ReturnID_Quit || action == 99) {
     dock_applet_ui_close();
     return 0;
+  }
+  if (action >= 100 && action < 100 + DA_ACTIONS && ui.mode == 3 &&
+      ui.runtime) {
+    if (!dock_applet_act(ui.runtime, (int)(action - 100))) {
+      message(dock_applet_acting(ui.runtime) ? "Busy..."
+                                             : "This action is not available");
+      return 0;
+    }
+    dock_applet_ui_close();
+    return 0;
+  }
+  if (action == 20 && ui.mode == 4) {
+    IPTR at = 0;
+    if (ui.selection)
+      GetAttr(MUIA_Cycle_Active, ui.selection, &at);
+    offered_dock = (int)at;
+    snprintf(selected, cap, "%s", offer_id);
+    dock_applet_ui_close();
+    return 1;
   }
   if (action == 5) {
     struct Screen *screen = ui.screen;

@@ -20,6 +20,22 @@ int main(void) {
   assert(!strcmp(dock_applet_field(s, "humidity"), "--"));
   strcpy(s->rows[0].section,"hourly");strcpy(s->rows[0].caption,"Now");strcpy(s->rows[0].detail,"15%");
   *old = *s;
+  /* An action widget answers in API 2; 3 is newer than this host. */
+  {
+    const char *v2 =
+        "{\"api\":2,\"package\":\"org.aros.capture\",\"instance\":\"i\","
+        "\"session\":\"s1\",\"generation\":1,\"status\":\"ready\","
+        "\"updated\":1,\"sourceTime\":1,\"fingerprint\":\"\",\"title\":"
+        "\"AROS Capture\",\"message\":\"Started\",\"fields\":{}}";
+    struct DockAppletSnapshot *t = calloc(1, sizeof *t);
+    assert(t && dock_applet_snapshot_parse(v2, strlen(v2), t) &&
+           !strcmp(t->message, "Started"));
+    char v3[400];
+    snprintf(v3, sizeof v3, "%s", v2);
+    v3[7] = '3';
+    assert(!dock_applet_snapshot_parse(v3, strlen(v3), t));
+    free(t);
+  }
   const char *bad = "{\"api\":99}";
   assert(!dock_applet_snapshot_parse(bad, strlen(bad), s));
   assert(!memcmp(old, s, sizeof *s));

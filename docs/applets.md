@@ -3,7 +3,7 @@ type: guide
 updated: 2026-11-06
 ---
 
-# Widgets and Weather (experimental API 1)
+# Widgets and Weather (experimental API 1 and 2)
 
 A widget is a directory containing metadata, a view binding, settings, assets
 and an architecture/ABI-specific provider executable. Dockbar scans packages
@@ -165,6 +165,68 @@ number/integer fields may declare `min`/`max`, text may declare `maxLength`
 a search operation and map its result label/coordinates to named fields; Weather
 uses this for geocoding. A provider must also validate settings itself.
 
+## Action widgets (API 2)
+
+A package that declares `"api": {"min": 2, ...}` needs Dockbar 0.6.0 or newer;
+older versions list it as "Unsupported widget API". Dockbar 0.6.0 also keeps
+loading API 1 packages and asks them in API 1.
+
+API 2 adds two manifest keys:
+
+```json
+"refresh": "none",
+"actions": [{"id": "area", "label": "Capture an area"},
+            {"id": "screen", "label": "Capture the screen"}]
+```
+
+- `refresh` is `schedule` (the API 1 behaviour, default) or `none`. With
+  `none` Dockbar never starts the provider by itself: not at start-up, on a
+  schedule, after a failure, after Rescan or after a settings change. It runs
+  only when the user chooses one of the actions.
+- `actions` holds 1 to 8 entries; `id` follows the package ID rules, `label`
+  is up to 39 bytes. `refresh: none` requires actions.
+
+The tile of such a widget shows only its icon (from `assets/conditions.json`,
+the `unknown` entry when there is no answer yet). A click opens a small
+window with one button per action, the last answer's `message`, Settings
+when the settings form has fields, and Close. Choosing an action closes the
+window first, then Dockbar writes a request with `"operation": "action"` and
+`"action": "<id>"` and starts the provider once. One action per widget runs
+at a time; a failed action is not retried. The answer is read as for API 1;
+its `message` appears in the window and the tooltip. A provider must answer
+within the normal timeout: long work, such as a program with its own window,
+is started by the provider as a separate program.
+
+## Installing a widget from another program
+
+Dockbar 0.6.0 and later have a public message port, `Dockbar.Widgets`. The
+message format and constants are in
+[include/dockbar/widgets.h](../include/dockbar/widgets.h) (MIT); copy the
+header into your project. The port's existence is the capability check.
+Never send messages to the port named `Dockbar`: it only opens Preferences
+and is also present in older versions.
+
+- **Query** fills in the Dockbar version, the widget API range, the build
+  variant (`x86_64-abiv11`, `x86_64-v1`, `aarch64-raspi-v1`) and the widget
+  drawer in use, which may have been changed with `--widgets`.
+- **Install** names a package drawer. Dockbar loads it like a package in
+  its catalogue; a package for another architecture or API is refused with
+  the same reason the picker would show. The copy is made beside the
+  installed packages and put in place only when complete. An installed
+  package with the same ID is replaced in its drawer (an update); if the old
+  copy cannot be deleted yet because something still uses it, it is moved
+  aside under a dot name and deleted by a later install. Settings, caches and
+  the dock configuration are not touched. While a provider of that package
+  runs, the answer is "busy"; try again.
+- With the offer flag, a newly installed package that is on no dock yet is
+  offered: "Add it to the dock?", with a dock choice when there are several.
+  The offer appears after the answer, so the installing program does not wait
+  for the user. While Preferences or an item editor is open there is no
+  offer; the answer text points to **Add widget**.
+
+Results: 0 installed, 1 updated, 10 bad request, 11 refused (not a package for
+this Dockbar), 12 busy, 13 copy failed (the installed package is kept).
+
 ## Provider protocol
 
 The host launches `Provider "ABSOLUTE-REQUEST-PATH"` asynchronously. It passes
@@ -172,18 +234,18 @@ only a quoted executable and request-file path through the DOS Shell. All
 settings and city names are serialized inside the request, never interpolated
 into a command line.
 
-The request contains `api: 1`, `package`, `packageRoot` (the installed package
+The request contains `api` (1, or 2 for an API 2 package), `package`, `packageRoot` (the installed package
 directory, resolved to a full path when the request is written; if that
 fails, Dockbar logs it and passes the path as configured, and Weather then
 also tries its own program drawer),
-`instance`, `session`, positive `generation`, `operation`, `query` and a
-`settings` object. A provider finds its own files from `packageRoot`, not from
+`instance`, `session`, positive `generation`, `operation`, for API 2 actions
+`action`, `query` and a `settings` object. A provider finds its own files from `packageRoot`, not from
 the drawer or current directory of the process the Shell runs it in. The worker performs
 one operation, serializes a response into `<request>.tmp`, closes it, then
 renames it to the unique previously absent `<request>.done`. It exits after
 publication. Do not replace a result belonging to another request.
 
-A response repeats the four identity fields and includes `status` (`ready`,
+A response carries `api` (1 or 2), repeats the four identity fields and includes `status` (`ready`,
 `error`, `loading`, `stale`), `updated` and `sourceTime` UTC seconds, `fingerprint`,
 `title`, optional `icon`, `message`, `attribution`, `url`, a `fields` object and
 optional `rows`. Each field has `value` (string, finite number or null) and an

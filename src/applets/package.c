@@ -87,10 +87,40 @@ static void load(struct DockAppletPackage *p,
   if (!dock_json_int(j, dock_json_get(j, api, "min"), &min) ||
       !dock_json_int(j, dock_json_get(j, api, "max"), &max) || min > max)
     goto done;
-  if (target->api < min || target->api > max) {
+  if (max < DA_API_MIN || min > target->api) {
     strcpy(p->reason, "Unsupported widget API");
     goto done;
   }
+  p->api = max < target->api ? max : target->api;
+  if (dock_json_get(j, 0, "refresh") >= 0) {
+    char refresh[16];
+    if (p->api < 2 || !str(j, 0, "refresh", refresh, sizeof refresh))
+      goto done;
+    if (!strcmp(refresh, "none"))
+      p->manual = 1;
+    else if (strcmp(refresh, "schedule"))
+      goto done;
+  }
+  int actions = dock_json_get(j, 0, "actions");
+  if (actions >= 0) {
+    int n = dock_json_count(j, actions);
+    if (p->api < 2 || n < 1 || n > DA_ACTIONS)
+      goto done;
+    for (int i = 0; i < n; i++) {
+      int a = dock_json_at(j, actions, i);
+      if (!str(j, a, "id", p->action_id[i], sizeof p->action_id[i]) ||
+          !dock_applet_id_valid(p->action_id[i]) ||
+          !str(j, a, "label", p->action_label[i], sizeof p->action_label[i]) ||
+          !p->action_label[i][0])
+        goto done;
+      for (int k = 0; k < i; k++)
+        if (!strcmp(p->action_id[k], p->action_id[i]))
+          goto done;
+    }
+    p->action_count = n;
+  }
+  if (p->manual && !p->action_count)
+    goto done;
   int hosts = dock_json_get(j, 0, "hosts"), found = 0;
   for (int i = 0; i < dock_json_count(j, hosts); i++)
     if (dock_json_is(j, dock_json_at(j, hosts, i), target->host))
@@ -150,6 +180,15 @@ static void load(struct DockAppletPackage *p,
 done:
   free(b);
   free(j);
+}
+int dock_applet_load_dir(const char *dir, const struct DockAppletTarget *t,
+                         struct DockAppletPackage *p) {
+  memset(p, 0, sizeof *p);
+  if (strlen(dir) >= sizeof p->root)
+    return 0;
+  strcpy(p->root, dir);
+  load(p, t);
+  return p->available;
 }
 int dock_applet_scan(const char *root, const struct DockAppletTarget *t,
                      struct DockAppletCatalog *c) {

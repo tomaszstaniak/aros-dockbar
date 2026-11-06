@@ -28,7 +28,8 @@ int dock_applet_snapshot_parse(const char *text, size_t len,
   if (!j || !s)
     goto done;
   if (len > DA_RESPONSE_LIMIT || !dock_json_parse(j, text, len) ||
-      !dock_json_int(j, dock_json_get(j, 0, "api"), &api) || api != 1)
+      !dock_json_int(j, dock_json_get(j, 0, "api"), &api) ||
+      api < DA_API_MIN || api > DA_API_MAX)
     goto done;
   if (!str(j, 0, "package", s->package, sizeof s->package, 1) ||
       !str(j, 0, "instance", s->instance, sizeof s->instance, 1) ||

@@ -3,6 +3,9 @@
 #include <stddef.h>
 #include <stdio.h>
 #define DA_ID 80
+/* Widget API versions this host speaks (applets.md). */
+#define DA_API_MIN 1
+#define DA_API_MAX 2
 #define DA_PATH 1024
 #define DA_FIELDS 24
 #define DA_ROWS 64

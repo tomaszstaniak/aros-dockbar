@@ -47,9 +47,90 @@ int main(int argc, char **argv) {
   t.variant = "other";
   assert(dock_applet_scan(argv[1], &t, c) && !c->packages[0].available);
   t.variant = "test";
+  /* A host that also speaks API 2 keeps loading API 1 packages and asks
+   * them in API 1. */
   t.api = 2;
-  assert(dock_applet_scan(argv[1], &t, c) && !c->packages[0].available);
+  assert(dock_applet_scan(argv[1], &t, c) && c->packages[0].available &&
+         c->packages[0].api == 1 && !c->packages[0].manual);
   t.api = 1;
+  {
+    static const char head[] =
+        "{\"schema\":1,\"id\":\"org.test.sample\",\"name\":\"Sample\","
+        "\"version\":\"0.1.0\",\"description\":\"Example\",\"license\":"
+        "\"MIT\",\"hosts\":[\"dockbar\"],\"settings\":\"settings.json\","
+        "\"views\":\"views.json\",\"entryPoints\":{\"test\":\"provider\"},";
+    static const struct {
+      const char *tail;
+      int api, available, manual, actions;
+    } cases[] = {
+        /* Too new for this host, then accepted by an API 2 host. */
+        {"\"api\":{\"min\":2,\"max\":2},\"refresh\":\"none\",\"actions\":"
+         "[{\"id\":\"area\",\"label\":\"Area\"},{\"id\":\"screen\","
+         "\"label\":\"Screen\"}]}",
+         1, 0, 0, 0},
+        {"\"api\":{\"min\":2,\"max\":2},\"refresh\":\"none\",\"actions\":"
+         "[{\"id\":\"area\",\"label\":\"Area\"},{\"id\":\"screen\","
+         "\"label\":\"Screen\"}]}",
+         2, 1, 1, 2},
+        /* Speaks 1 to 3: asked in 2 here. */
+        {"\"api\":{\"min\":1,\"max\":3}}", 2, 1, 0, 0},
+        {"\"api\":{\"min\":3,\"max\":3}}", 2, 0, 0, 0},
+        /* Manual refresh needs actions; actions need API 2. */
+        {"\"api\":{\"min\":2,\"max\":2},\"refresh\":\"none\"}", 2, 0, 0, 0},
+        {"\"api\":{\"min\":1,\"max\":1},\"actions\":[{\"id\":\"a\","
+         "\"label\":\"A\"}]}",
+         2, 0, 0, 0},
+        {"\"api\":{\"min\":1,\"max\":1},\"refresh\":\"none\"}", 2, 0, 0, 0},
+        {"\"api\":{\"min\":2,\"max\":2},\"refresh\":\"sometimes\"}", 2, 0, 0, 0},
+        {"\"api\":{\"min\":2,\"max\":2},\"refresh\":\"schedule\"}", 2, 1, 0, 0},
+        /* Bad action lists. */
+        {"\"api\":{\"min\":2,\"max\":2},\"refresh\":\"none\",\"actions\":[]}", 2, 0, 0, 0},
+        {"\"api\":{\"min\":2,\"max\":2},\"refresh\":\"none\",\"actions\":"
+         "[{\"id\":\"a/b\",\"label\":\"A\"}]}",
+         2, 0, 0, 0},
+        {"\"api\":{\"min\":2,\"max\":2},\"refresh\":\"none\",\"actions\":"
+         "[{\"id\":\"a\",\"label\":\"\"}]}",
+         2, 0, 0, 0},
+        {"\"api\":{\"min\":2,\"max\":2},\"refresh\":\"none\",\"actions\":"
+         "[{\"id\":\"a\",\"label\":\"A\"},{\"id\":\"a\",\"label\":\"B\"}]}",
+         2, 0, 0, 0},
+        {"\"api\":{\"min\":2,\"max\":2},\"refresh\":\"none\",\"actions\":"
+         "[{\"id\":\"a1\",\"label\":\"A\"},{\"id\":\"a2\",\"label\":\"A\"},"
+         "{\"id\":\"a3\",\"label\":\"A\"},{\"id\":\"a4\",\"label\":\"A\"},"
+         "{\"id\":\"a5\",\"label\":\"A\"},{\"id\":\"a6\",\"label\":\"A\"},"
+         "{\"id\":\"a7\",\"label\":\"A\"},{\"id\":\"a8\",\"label\":\"A\"},"
+         "{\"id\":\"a9\",\"label\":\"A\"}]}",
+         2, 0, 0, 0},
+    };
+    char saved[4096], next[4096];
+    snprintf(q, sizeof q, "%s/applet.json", p);
+    FILE *f = fopen(q, "r");
+    assert(f);
+    size_t got = fread(saved, 1, sizeof saved - 1, f);
+    saved[got] = 0;
+    fclose(f);
+    for (size_t i = 0; i < sizeof cases / sizeof *cases; i++) {
+      snprintf(next, sizeof next, "%s%s", head, cases[i].tail);
+      put(p, "applet.json", next);
+      t.api = cases[i].api;
+      assert(dock_applet_scan(argv[1], &t, c) && c->count == 1);
+      const struct DockAppletPackage *k = &c->packages[0];
+      if (k->available != cases[i].available ||
+          (k->available && (k->manual != cases[i].manual ||
+                            k->action_count != cases[i].actions))) {
+        fprintf(stderr, "case %u: available=%d manual=%d actions=%d (%s)\n",
+                (unsigned)i, k->available, k->manual, k->action_count, k->reason);
+        return 1;
+      }
+      if (i == 0)
+        assert(!strcmp(k->reason, "Unsupported widget API"));
+      if (i == 1)
+        assert(k->api == 2 && !strcmp(k->action_id[1], "screen") &&
+               !strcmp(k->action_label[0], "Area"));
+    }
+    put(p, "applet.json", saved);
+    t.api = 1;
+  }
   snprintf(q, sizeof q, "%s/provider", p);
   assert(!unlink(q));
   assert(dock_applet_scan(argv[1], &t, c) && !c->packages[0].available);

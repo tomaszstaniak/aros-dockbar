@@ -34,6 +34,9 @@
 #include "widget.h"
 #include "applets/worker_aros.h"
 #include "applets/panel_aros.h"
+#include "applets/install.h"
+#include "../include/dockbar/widgets.h"
+#include <stddef.h>
 #include "interaction.h"
 #include "native_icons.h"
 #include "sprite.h"
@@ -185,7 +188,7 @@ struct App {
  int compose_ok,no_compose,compose_refused[DOCK_MAX_DOCKS];
  char status[100]; unsigned status_until; int status_view;
  /* Quiet ports (no signal bit, see dock_quiet_port): the loop polls them. */
- struct MsgPort *input_port,*instance_port,*notify_port;
+ struct MsgPort *input_port,*instance_port,*notify_port,*widgets_port;
  struct IOStdReq *input_request;
  /* Screen lifecycle: the docks live on the Workbench screen only while it
   * is attached. Settings, ids and the process outlive any screen. */
@@ -778,7 +781,11 @@ static void style_for(const struct DockSet *set,int index,int icon,struct DockSt
  for(int i=0;i<d->model.count;i++){
   const struct DockItem *item=&d->model.items[i];
   if(item->kind==DOCK_CLOCK)widget_size(item->path,&s->content_w[i],&s->content_h[i]);
-  if(item->kind==DOCK_APPLET){s->content_w[i]=APPLET_TEXT_X+applet_text_room();s->content_h[i]=app.font->tf_YSize;if(s->content_h[i]<32)s->content_h[i]=32;}
+  if(item->kind==DOCK_APPLET){
+   /* An action widget shows its icon only (no value beside it). */
+   const struct DockAppletPackage *pkg=dock_applet_find(dock_applets_catalog(),item->path);
+   s->content_w[i]=pkg && pkg->available && pkg->manual?32:APPLET_TEXT_X+applet_text_room();
+   s->content_h[i]=app.font->tf_YSize;if(s->content_h[i]<32)s->content_h[i]=32;}
   s->present[i]=item_present(d,item);
   if(s->present[i]!=DOCK_PRESENT_ICON){
    char caption[DOCK_LABEL+4];item_caption(item,caption,sizeof caption);
@@ -1622,6 +1629,53 @@ static void handle_second_start(void) {
  while(app.instance_port && (msg=GetMsg(app.instance_port))){ReplyMsg(msg);asked=1;}
  if(asked && app.screen){note("PREFS requested by a second start");open_prefs(0);}
 }
+/* Widget requests from other programs (include/dockbar/widgets.h): a
+ * query, or a package to install. An install that adds a new package may
+ * end with the offer to put it on a dock, asked after the reply. */
+static struct { int pending; char id[DA_ID], name[80]; } install_offer;
+static int widget_on_a_dock(const char *id) {
+ for(int v=0;v<app.set.count;v++){const struct DockModel *m=&app.set.docks[v].model;
+  for(int i=0;i<m->count;i++)if(m->items[i].kind==DOCK_APPLET && !strcmp(m->items[i].path,id))return 1;}
+ return 0;
+}
+static void handle_widget_requests(void) {
+ struct Message *m;
+ while(app.widgets_port && (m=GetMsg(app.widgets_port))){
+  struct DockbarWidgetsMsg *q=(struct DockbarWidgetsMsg *)m;
+  /* Too short to hold the answer: nothing is written into it. */
+  if(m->mn_Length<sizeof *q){note("WIDGETS request of %u bytes ignored",(unsigned)m->mn_Length);ReplyMsg(m);continue;}
+  q->result=DOCKBAR_WIDGETS_BADREQUEST;q->text[0]=0;
+  q->api_min=DA_API_MIN;q->api_max=DA_API_MAX;
+  snprintf(q->dockbar_version,sizeof q->dockbar_version,"%s",DOCK_VERSION);
+  snprintf(q->variant,sizeof q->variant,"%s",dock_applets_variant());
+  snprintf(q->root,sizeof q->root,"%s",dock_applets_root());
+  if(q->magic!=DOCKBAR_WIDGETS_MAGIC || q->version!=DOCKBAR_WIDGETS_VERSION){note("WIDGETS request with magic %08lx version %u refused",(unsigned long)q->magic,(unsigned)q->version);ReplyMsg(m);continue;}
+  if(q->command==DOCKBAR_WIDGETS_QUERY){q->result=DOCKBAR_WIDGETS_OK;ReplyMsg(m);continue;}
+  if(q->command!=DOCKBAR_WIDGETS_INSTALL || !q->path){ReplyMsg(m);continue;}
+  struct DockAppletTarget target={"dockbar",dock_applets_variant(),DA_API_MAX};
+  struct DockAppletPackage *pkg=calloc(1,sizeof *pkg);
+  if(!pkg){q->result=DOCKBAR_WIDGETS_FAILED;snprintf(q->text,sizeof q->text,"Not enough memory");ReplyMsg(m);continue;}
+  int r=dock_applet_install_check((const char *)q->path,&target,pkg,q->text,sizeof q->text);
+  if(!r && dock_applets_package_busy(pkg->id)){r=DA_INSTALL_BUSY;snprintf(q->text,sizeof q->text,"%.80s is working right now; try again in a moment",pkg->name);}
+  if(!r)r=dock_applet_install_copy(pkg,dock_applets_root(),&target,dock_applets_catalog(),q->text,sizeof q->text);
+  note("WIDGETS install %s from %.200s: %d %s",pkg->id[0]?pkg->id:"?",(const char *)q->path,r,q->text);
+  if(r==DA_INSTALL_OK || r==DA_INSTALL_UPDATED){
+   dock_applets_rescan();
+   if(r==DA_INSTALL_OK && (q->flags&DOCKBAR_WIDGETS_OFFER_ADD) && !widget_on_a_dock(pkg->id)){
+    if(app.readonly || app.prefs.window || app.editor.window)snprintf(q->text,sizeof q->text,"%.80s: choose Add widget in the dock menu to put it on a dock",pkg->name);
+    else{install_offer.pending=1;snprintf(install_offer.id,sizeof install_offer.id,"%s",pkg->id);snprintf(install_offer.name,sizeof install_offer.name,"%s",pkg->name);}
+   }
+  }
+  q->result=r;free(pkg);ReplyMsg(m);
+ }
+ if(install_offer.pending && app.screen && !app.rebuild && lock_screen()){
+  static char names[DOCK_MAX_DOCKS][DOCK_NAME+16];const char *list[DOCK_MAX_DOCKS];
+  for(int i=0;i<app.set.count;i++){if(app.set.docks[i].name[0])snprintf(names[i],sizeof names[i],"%s",app.set.docks[i].name);else snprintf(names[i],sizeof names[i],"Dock %d",i+1);list[i]=names[i];}
+  install_offer.pending=0;
+  if(!dock_applet_ui_offer(app.screen,install_offer.id,install_offer.name,list,app.set.count))note("WIDGETS offer window could not open");
+  unlock_screen();
+ }
+}
 static void stop_wallpaper_notify(void) {
  /* EndNotify answers the notices still queued; ours are answered on receipt. */
  if(app.wall_active){EndNotify(&app.wall_note);app.wall_active=0;}
@@ -1735,7 +1789,7 @@ static void render_view(int index) {
    else {box(v,x+4,y+5,24,20,8,v->c->text_muted);put_text(v,x+11,y+6,"?",v->c->text);}
    /* An animation frame redraws the icon only; the text beside it stays. */
    if(!partial || x+APPLET_TEXT_X<clip_x1)put_text(v,x+APPLET_TEXT_X,y+(s->content.h-th)/2,caption,v->c->text);
-   if(r && r->state.snapshot.status==DA_STALE)put_text(v,x+26,y,"*",v->c->text);
+   if(r && !r->package.manual && r->state.snapshot.status==DA_STALE)put_text(v,x+26,y,"*",v->c->text);
    if(vis->fade.from && vis->fade_pending){vis->fade.started=dock_applets_now();vis->fade_pending=0;}
    if(vis->fade.from && s->content.x>=0 && y>=0 && s->content.x+s->content.w<=v->ww && y+s->content.h<=v->wh)
     dock_fade_apply(&vis->fade,v->pixels+4*((size_t)y*v->ww+s->content.x),v->ww*4,dock_applets_now());
@@ -2000,7 +2054,10 @@ static void update_tooltip(void) {
    if(i!=tip_view || v->hover!=tip_item){tip_view=i;tip_item=v->hover;tip_since=milliseconds();}
    if(milliseconds()-tip_since<(app.tooltip?TIP_SWITCH_MS:TIP_DELAY_MS))return;
    label=model_of(i)->items[v->hover].label;
-   if(it->kind==DOCK_APPLET){struct DockAppletRuntime *r=v->visual[v->hover].applet;if(r && !r->state.has_data){snprintf(applet_tip,sizeof applet_tip,"%.60s: %.40s%s%.200s",r->package.name,dock_applet_primary(r),r->state.snapshot.message[0]?" | ":"",r->state.snapshot.message);label=applet_tip;}
+   if(it->kind==DOCK_APPLET){struct DockAppletRuntime *r=v->visual[v->hover].applet;
+   /* An action widget: its name and what the last action said. */
+   if(r && r->package.available && r->package.manual){snprintf(applet_tip,sizeof applet_tip,"%.60s%s%.200s",r->package.name,r->state.snapshot.message[0]?": ":"",r->state.snapshot.message);label=applet_tip;}
+   else if(r && !r->state.has_data){snprintf(applet_tip,sizeof applet_tip,"%.60s: %.40s%s%.200s",r->package.name,dock_applet_primary(r),r->state.snapshot.message[0]?" | ":"",r->state.snapshot.message);label=applet_tip;}
    else if(r){double age=difftime(time(NULL),(time_t)r->state.snapshot.updated);snprintf(applet_tip,sizeof applet_tip,"%.100s | %.140s | %.70s | %.0f min%s",dock_applet_secondary(r),dock_applet_field(&r->state.snapshot,r->package.tooltip),r->state.snapshot.message,age>0&&r->state.has_data?age/60:0,r->state.snapshot.status==DA_STALE?" (stale)":"");label=applet_tip;}}
    view=i;slot_on_screen(i,v->hover,&x,&y,&w,&h);break;
   }
@@ -2393,6 +2450,7 @@ static void launch_or_open(int view,int container,int index) {
  if(item->kind==DOCK_GROUP){if(app.panel.window && app.panel_view==view && app.panel.container==item->group)close_panel();else open_panel(view,item->group,1);}
  else if(item->kind==DOCK_APPLET){
   close_panel();close_tooltip();struct DockAppletRuntime *r=app.views[view].visual[index].applet;
+  if(r && r->package.available && r->package.manual){if(lock_screen()){dock_applet_ui_actions(app.screen,r);unlock_screen();}return;}
   int x,y,w,h;slot_on_screen(view,index,&x,&y,&w,&h);
   if(lock_screen()){dock_applet_ui_open_at(app.screen,r,x,y,w,h,app.views[view].layout.orientation,app.views[view].c);unlock_screen();}
  }
@@ -3216,6 +3274,11 @@ int main(int argc,char **argv) {
  }
  app.instance_port=dock_quiet_port();
  if(app.instance_port){app.instance_port->mp_Node.ln_Name=instance_name;app.instance_port->mp_Node.ln_Pri=0;AddPort(app.instance_port);}
+ /* Separate from "Dockbar", which older versions answer by opening
+  * Preferences whatever the message holds: this name means widgets.h. */
+ static char widgets_name[]=DOCKBAR_WIDGETS_PORT;
+ app.widgets_port=FindPort((CONST_STRPTR)widgets_name)?NULL:dock_quiet_port();
+ if(app.widgets_port){app.widgets_port->mp_Node.ln_Name=widgets_name;app.widgets_port->mp_Node.ln_Pri=0;AddPort(app.widgets_port);}
  Permit();
  CyberGfxBase=OpenLibrary((CONST_STRPTR)"cybergraphics.library",0);
  int ok=CyberGfxBase!=NULL;
@@ -3276,6 +3339,7 @@ int main(int argc,char **argv) {
   if(!handle_screen_notify()){note("SCREEN reattach failed; waiting for the next open");}
   handle_wallpaper_notify();
   handle_second_start();
+  handle_widget_requests();
   if(!app.screen){Delay(5);continue;}
   
   if(now!=last){
@@ -3285,6 +3349,10 @@ int main(int argc,char **argv) {
     if(!app.prefs.window)dock_applets_purge(widget_referenced);}
    for(int vi=0;vi<app.set.count;vi++)for(int ai=0;ai<model_of(vi)->count;ai++){
     struct Visual *vis=&app.views[vi].visual[ai];struct DockAppletRuntime *r=vis->applet;
+    /* A package that came, went or changed (install, Rescan): its size
+     * and picture may differ, so the docks are built again from scratch
+     * (an update would keep the item's old picture and size). */
+    if(r && r->package_changed){r->package_changed=0;if(!app.rebuild_asked){app.rebuild=app.rebuild_asked=1;note("WIDGET %s/%s package changed; docks rebuilt",r->state.package,r->state.instance);}}
     if(r && r->changed){
      struct DockView *v=&app.views[vi];v->dirty=1;
      uint64_t signature=dock_applet_compact_signature(&r->state.snapshot,r->package.primary);
@@ -3327,11 +3395,14 @@ int main(int argc,char **argv) {
    if(view>=0){open_items(view);fill_items(at<app.set.docks[view].model.count?at:0);}
   }
   char selected_applet[80];int applet_action=dock_applet_ui_poll(dock_applets_now(),selected_applet,sizeof selected_applet);
+  {int offered=dock_applet_ui_offered_dock();if(applet_action==1 && offered>=0 && offered<app.set.count)app.edit_view=offered;}
   if(applet_action==1 && !editing_blocked(app.edit_view)){
    next_set=app.set;struct DockItem fresh={0};fresh.kind=DOCK_APPLET;snprintf(fresh.path,sizeof fresh.path,"%s",selected_applet);dock_applets_new_id(fresh.dir,sizeof fresh.dir);
    const struct DockAppletPackage *pkg=dock_applet_find(dock_applets_catalog(),selected_applet);snprintf(fresh.label,sizeof fresh.label,"%.63s",pkg?pkg->name:"Applet");
    if(dock_insert(&next_set.docks[app.edit_view].model,0,&fresh,next_set.docks[app.edit_view].model.count)>0 && commit("Widget added",app.edit_view,0)){
     configure_after_rebuild=dock_applets_get(fresh.path,fresh.dir);
+    /* A widget without settings is ready as it is. */
+    if(configure_after_rebuild && !dock_applet_has_settings(configure_after_rebuild))configure_after_rebuild=NULL;
    }
   }else if(applet_action==2){struct DockAppletRuntime *r=dock_applet_ui_instance();if(r){next_set=app.set;for(int vi=0;vi<next_set.count;vi++)for(int ai=0;ai<next_set.docks[vi].model.count;ai++){struct DockItem *it=&next_set.docks[vi].model.items[ai];if(it->kind==DOCK_APPLET&&!strcmp(it->path,r->state.package)&&!strcmp(it->dir,r->state.instance)){
    /* The settings window checks too; this is the place that changes the dock. */
@@ -3460,6 +3531,9 @@ int main(int argc,char **argv) {
  if(CyberGfxBase)CloseLibrary(CyberGfxBase);
  /* A second start that asked just now is waiting for its answer. */
  if(app.instance_port){struct Message *m;RemPort(app.instance_port);while((m=GetMsg(app.instance_port)))ReplyMsg(m);dock_quiet_port_free(app.instance_port);}
+ if(app.widgets_port){struct Message *m;RemPort(app.widgets_port);
+  while((m=GetMsg(app.widgets_port))){if(m->mn_Length>=sizeof(struct DockbarWidgetsMsg)){((struct DockbarWidgetsMsg *)m)->result=DOCKBAR_WIDGETS_FAILED;snprintf(((struct DockbarWidgetsMsg *)m)->text,sizeof ((struct DockbarWidgetsMsg *)m)->text,"Dockbar is quitting");}ReplyMsg(m);}
+  dock_quiet_port_free(app.widgets_port);}
  if(app.log)fclose(app.log);
  ((struct Process *)FindTask(NULL))->pr_WindowPtr=app.requesters;
  return ok?0:20;

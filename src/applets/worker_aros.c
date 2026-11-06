@@ -74,7 +74,7 @@ static int absolute(const char *p, char *out) {
   return ok;
 }
 void dock_applets_rescan(void) {
-  struct DockAppletTarget target = {"dockbar", variant(), 1};
+  struct DockAppletTarget target = {"dockbar", variant(), DA_API_MAX};
   dock_applet_scan(packages_root, &target, &catalog);
   for (struct DockAppletRuntime *r = instances; r; r = r->next)
     r->reconcile_pending = 1;
@@ -346,12 +346,13 @@ static void provider_break(const char *request) {
 }
 static int request(struct Worker *w, struct DockAppletRuntime *r,
                    const struct DockAppletRequest *q, const char *operation,
-                   const char *query, uint64_t now) {
+                   const char *query, const char *action, uint64_t now) {
   char file[80];
   snprintf(file, sizeof file, "r-%lu.json", ++serial);
   if (!join(w->request, sizeof w->request, session_root, file))
     return 0;
-  char a[200], b[200], c[200], d[300], op[100], root[DA_PATH], e[DA_PATH * 2];
+  char a[200], b[200], c[200], d[300], op[100], act[120] = "",
+      root[DA_PATH], e[DA_PATH * 2];
   /* The provider finds its own files (Weather: certs/) from this, not from
    * the drawer of the process the Shell runs it in. Resolved per request,
    * so a package that resolves differently later is still named exactly. */
@@ -367,17 +368,23 @@ static int request(struct Worker *w, struct DockAppletRuntime *r,
       !dock_json_quote(query ? query : "", d, sizeof d) ||
       !dock_json_quote(operation, op, sizeof op))
     return 0;
+  if (action) {
+    /* API 2: the action the user chose (operation "action"). */
+    memcpy(act, ",\"action\":", 10);
+    if (!dock_json_quote(action, act + 10, sizeof act - 10))
+      return 0;
+  }
   FILE *f = fopen(w->request, "wb");
   if (!f)
     return 0;
   int ok =
       fprintf(
           f,
-          "{\"api\":1,\"package\":%s,\"packageRoot\":%s,\"instance\":%s,"
-          "\"session\":%s,\"generation\":%lu,\"operation\":%s,\"query\":%s,"
+          "{\"api\":%d,\"package\":%s,\"packageRoot\":%s,\"instance\":%s,"
+          "\"session\":%s,\"generation\":%lu,\"operation\":%s%s,\"query\":%s,"
           "\"settings\":%s}\n",
-          a, e, b, c, q->generation, op, d,
-          r->settings[0] ? r->settings : "{}") > 0;
+          r->package.api > 0 ? r->package.api : 1, a, e, b, c, q->generation,
+          op, act, d, r->settings[0] ? r->settings : "{}") > 0;
   if (fclose(f))
     ok = 0;
   snprintf(w->name, sizeof w->name, "Widget provider %s", file);
@@ -412,7 +419,7 @@ int dock_applet_search(struct DockAppletRuntime *r, const char *query,
       char error[160];
       if (!dock_applet_load_form(r, &form, error, sizeof error))
         return 0;
-      if (!request(&workers[i], r, &q, form.search, query, now))
+      if (!request(&workers[i], r, &q, form.search, query, NULL, now))
         return 0;
       r->searching = 1;
       free(r->search_result);
@@ -430,6 +437,7 @@ static void reconcile(struct DockAppletRuntime *r, uint64_t now) {
   r->reconcile_pending = 0;
   if (!dock_applet_package_refresh(&r->package, &catalog, r->state.package, 0))
     return;
+  r->package_changed = 1;
   dock_applet_instance_reset(&r->state, now);
   r->configured = 0;
   r->settings[0] = r->caption[0] = 0;
@@ -574,8 +582,12 @@ void dock_applets_poll(uint64_t now) {
           s = NULL;
         }
       } else if (valid && dock_applet_accept(&r->state, s, now)) {
-        NOTE("WIDGET answer to %s after %lu ms: %s, next in %lu s", w->name, (unsigned long)(now - w->started),
-             s->status == DA_READY ? "data" : "failed", (unsigned long)((r->state.next_due - now) / 1000u));
+        if (r->package.manual)
+          NOTE("WIDGET answer to %s after %lu ms: %s", w->name, (unsigned long)(now - w->started),
+               s->status == DA_READY ? "done" : "failed");
+        else
+          NOTE("WIDGET answer to %s after %lu ms: %s, next in %lu s", w->name, (unsigned long)(now - w->started),
+               s->status == DA_READY ? "data" : "failed", (unsigned long)((r->state.next_due - now) / 1000u));
         if (s->status == DA_READY) {
           char cache[DA_PATH];
           if (join(cache, sizeof cache, r->directory, "last-good.json")) {
@@ -646,9 +658,21 @@ void dock_applets_poll(uint64_t now) {
     }
     if (busy || slot < 0)
       continue;
+    /* Started only for an action the user chose: no start-up, schedule,
+     * retry, Rescan or settings change runs it. */
+    char action[40];
+    if (r->package.manual) {
+      if (!r->action[0])
+        continue;
+      snprintf(action, sizeof action, "%s", r->action);
+      r->action[0] = 0;
+      r->state.next_due = 0;
+    }
     struct DockAppletRequest q;
     if (dock_applet_tick(&r->state, now, &q)) {
-      if (!request(&workers[slot], r, &q, r->package.operation, NULL, now)) {
+      if (!request(&workers[slot], r, &q,
+                   r->package.manual ? "action" : r->package.operation, NULL,
+                   r->package.manual ? action : NULL, now)) {
         dock_applet_fail(&r->state, "Could not launch provider", now);
         NOTE("WIDGET %s/%s: provider could not be started; next in %lu s", r->state.package, r->state.instance,
              (unsigned long)((r->state.next_due - now) / 1000u));
@@ -694,6 +718,35 @@ int dock_applet_icon_path(const struct DockAppletRuntime *r,char *out,size_t cap
 int dock_applet_sprite_path(const struct DockAppletRuntime *r,char *out,size_t cap,struct DockSpriteSpec *spec){
  return dock_applet_asset_path(r,r->state.snapshot.icon,out,cap,spec);
 }
+int dock_applet_act(struct DockAppletRuntime *r, int index) {
+  if (!r || !r->package.available || !r->package.manual || index < 0 ||
+      index >= r->package.action_count || r->action[0] || r->state.pending ||
+      r->searching)
+    return 0;
+  for (int i = 0; i < 4; i++)
+    if (workers[i].owner == r)
+      return 0;
+  snprintf(r->action, sizeof r->action, "%s", r->package.action_id[index]);
+  r->changed = 1;
+  return 1;
+}
+int dock_applets_package_busy(const char *id) {
+  for (int i = 0; i < 4; i++)
+    if (workers[i].owner && !strcmp(workers[i].identity.package, id))
+      return 1;
+  return 0;
+}
+const char *dock_applets_root(void) { return packages_root; }
+const char *dock_applets_variant(void) { return variant(); }
+int dock_applet_has_settings(struct DockAppletRuntime *r) {
+  struct DockAppletForm form;
+  char error[160];
+  return r && (!dock_applet_load_form(r, &form, error, sizeof error) ||
+               form.count > 0);
+}
+int dock_applet_acting(const struct DockAppletRuntime *r) {
+  return r && (r->action[0] || r->state.pending);
+}
 const char *dock_applet_primary(const struct DockAppletRuntime *r) {
   if (!r)
     return "Unavailable";
@@ -706,6 +759,9 @@ const char *dock_applet_primary(const struct DockAppletRuntime *r) {
   return dock_applet_field(&r->state.snapshot, r->package.primary);
 }
 const char *dock_applet_compact(const struct DockAppletRuntime *r) {
+  /* An action widget is its icon: there is no value to show. */
+  if (r && r->package.available && r->package.manual)
+    return "";
   if (r && r->package.available && r->configured && !r->state.has_data &&
       r->state.snapshot.status != DA_ERROR)
     return "...";
