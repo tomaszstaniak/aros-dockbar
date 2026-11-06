@@ -215,7 +215,11 @@ and is also present in older versions.
   installed packages and put in place only when complete. An installed
   package with the same ID is replaced in its drawer (an update); if the old
   copy cannot be deleted yet because something still uses it, it is moved
-  aside under a dot name and deleted by a later install. Settings, caches and
+  aside under a dot name and deleted by a later install. An install never
+  deletes or replaces anything it did not make: a drawer named after the
+  package ID that is not that package, or a dot drawer with an install name
+  (`.<id>.installing`, `.<id>.old`) that no install left, makes it refuse
+  and name the drawer to move. Settings, caches and
   the dock configuration are not touched. While a provider of that package
   runs, the answer is "busy"; try again.
 - With the offer flag, a newly installed package that is on no dock yet is
@@ -225,7 +229,9 @@ and is also present in older versions.
   offer; the answer text points to **Add widget**.
 
 Results: 0 installed, 1 updated, 10 bad request, 11 refused (not a package for
-this Dockbar), 12 busy, 13 copy failed (the installed package is kept).
+this Dockbar, or a drawer in the way), 12 busy, 13 copy failed (the
+installed package is kept; if it could not be put back in its drawer, the
+answer says so, and the next install puts it back).
 
 ## Provider protocol
 

@@ -1657,7 +1657,12 @@ static void handle_widget_requests(void) {
   if(!pkg){q->result=DOCKBAR_WIDGETS_FAILED;snprintf(q->text,sizeof q->text,"Not enough memory");ReplyMsg(m);continue;}
   int r=dock_applet_install_check((const char *)q->path,&target,pkg,q->text,sizeof q->text);
   if(!r && dock_applets_package_busy(pkg->id)){r=DA_INSTALL_BUSY;snprintf(q->text,sizeof q->text,"%.80s is working right now; try again in a moment",pkg->name);}
-  if(!r)r=dock_applet_install_copy(pkg,dock_applets_root(),&target,dock_applets_catalog(),q->text,sizeof q->text);
+  /* A fresh scan: a drawer added by hand since the last one must be seen,
+   * or the install would take it for free space. */
+  struct DockAppletCatalog *now=r?NULL:calloc(1,sizeof *now);
+  if(!r && (!now || !dock_applet_scan(dock_applets_root(),&target,now))){r=DA_INSTALL_FAILED;snprintf(q->text,sizeof q->text,"The widget drawer could not be read");}
+  if(!r)r=dock_applet_install_copy(pkg,dock_applets_root(),&target,now,q->text,sizeof q->text);
+  free(now);
   note("WIDGETS install %s from %.200s: %d %s",pkg->id[0]?pkg->id:"?",(const char *)q->path,r,q->text);
   if(r==DA_INSTALL_OK || r==DA_INSTALL_UPDATED){
    dock_applets_rescan();

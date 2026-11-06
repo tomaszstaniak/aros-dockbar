@@ -111,7 +111,7 @@ Using a dock
   dock; adding shortcuts there does not.
   Dropped on other items (a drawer, a clock, a separator) files are
   refused and nothing changes; files are never copied or moved.
-- Weather (x86_64 package only): open the dock menu (click the grip at
+- Weather: open the dock menu (click the grip at
   the dock's end), choose "Add widget...", select Weather and Add. Dockbar
   never adds it by itself, and an existing dock is not changed. In its
   settings search for your city, pick it with "Use selected city" (or
@@ -124,6 +124,14 @@ Using a dock
   the hourly and seven-day forecast. Weather lives in the Widgets drawer next to
   the program: install and move Dockbar as the whole drawer, never the
   program file alone.
+- Widgets from other programs: a program can install its own widget
+  into a running Dockbar. Dockbar checks that the widget is made for this
+  system, copies it into its Widgets drawer and asks whether to add it to
+  a dock. Installing it again updates it; its settings and your docks stay
+  as they are. A drawer in Widgets that Dockbar did not install is never
+  replaced. Some widgets show only an icon: click it and choose what the
+  widget should do. Such a widget runs only when you choose one of its
+  actions, never by itself.
 - Drawers: right-click a drawer item and set "Open on click" to
   "Panel" to see the drawer's contents beside the dock instead of a
   Wanderer window. The panel shows one drawer at a time, drawers first,

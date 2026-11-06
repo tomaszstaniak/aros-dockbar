@@ -18,7 +18,7 @@ done
 "$compiler" $flags -I"$repo/src" "$repo/tests/test_applet_config.c" "$repo/src/docks.c" \
  "$repo/src/model.c" "$repo/src/config.c" "$repo/src/layout.c" "$repo/src/theme.c" -lm -o "$run/config"
 "$run/config" "$run/config-data"
-"$compiler" $flags -I"$repo/src" "$repo/tests/test_applet_install.c" "$repo/src/applets/install.c" \
+"$compiler" $flags -I"$repo/src" -DDA_INSTALL_TEST "$repo/tests/test_applet_install.c" "$repo/src/applets/install.c" \
  "$repo/src/applets/package.c" "$repo/src/applets/view.c" "$repo/src/applets/json.c" "$repo/src/applets/snapshot.c" -lm -o "$run/install"
 mkdir "$run/install-data"; "$run/install" "$run/install-data"
 "$compiler" $flags -I"$repo/src" "$repo/tests/test_applet_purge.c" "$repo/src/applets/purge.c" -o "$run/purge"

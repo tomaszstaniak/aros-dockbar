@@ -49,6 +49,32 @@ static int exists(const char *p) {
   struct stat st;
   return !lstat(p, &st);
 }
+void dock_applet_install_test_rename(int (*)(const char *, const char *));
+/* Fails every rename onto the installed drawer: the new copy cannot be put
+ * in place, and neither can the old one be put back. */
+static char blocked[1300];
+static int block_count;
+static int blocking_rename(const char *from, const char *to) {
+  if (block_count && !strcmp(to, blocked)) {
+    block_count--;
+    return -1;
+  }
+  return rename(from, to);
+}
+static void foreign(const char *rel) {
+  assert(!mkdir(path(rel), 0755));
+  put(path(rel), "keep.txt", "not a widget");
+}
+static void unforeign(const char *rel) {
+  char p[1300];
+  snprintf(p, sizeof p, "%s/keep.txt", path(rel));
+  assert(!unlink(p) && !rmdir(path(rel)));
+}
+static int kept(const char *rel) {
+  char p[1300];
+  snprintf(p, sizeof p, "%s/keep.txt", path(rel));
+  return exists(p);
+}
 static int install(const char *source, struct DockAppletCatalog *c,
                    const struct DockAppletTarget *t, char *text) {
   struct DockAppletPackage pkg;
@@ -74,12 +100,36 @@ int main(int argc, char **argv) {
   assert(install(path("pi"), c, &t, text) == DA_INSTALL_REFUSED &&
          strstr(text, "architecture") && c->count == 0);
   assert(install(path("missing"), c, &t, text) == DA_INSTALL_REFUSED);
+  /* A drawer with the package's name that is not the package, and staging
+   * or old drawers no install made: refused, left as they are. */
+  foreign("root/org.test.capture");
+  assert(install(path("v1"), c, &t, text) == DA_INSTALL_REFUSED &&
+         strstr(text, "not this widget") && kept("root/org.test.capture"));
+  unforeign("root/org.test.capture");
+  foreign("root/.org.test.capture.installing");
+  assert(install(path("v1"), c, &t, text) == DA_INSTALL_REFUSED &&
+         strstr(text, ".org.test.capture.installing") &&
+         kept("root/.org.test.capture.installing") &&
+         !exists(path("root/org.test.capture")));
+  unforeign("root/.org.test.capture.installing");
+  foreign("root/.org.test.capture.old");
+  assert(install(path("v1"), c, &t, text) == DA_INSTALL_REFUSED &&
+         strstr(text, ".org.test.capture.old") &&
+         kept("root/.org.test.capture.old") &&
+         !exists(path("root/org.test.capture")));
+  unforeign("root/.org.test.capture.old");
+  /* A foreign drawer with a stale name is not deleted; the install goes on. */
+  foreign("root/.org.test.capture.stale-1");
   /* New install: the drawer is named after the ID. */
   assert(install(path("v1"), c, &t, text) == DA_INSTALL_OK &&
          !strcmp(text, "Capture"));
   assert(c->count == 1 && c->packages[0].available &&
          !strcmp(c->packages[0].version, "0.1.0") &&
          exists(path("root/org.test.capture/bin/x86_64-abiv11/Provider")));
+  assert(kept("root/.org.test.capture.stale-1"));
+  unforeign("root/.org.test.capture.stale-1");
+  /* The installed package carries no install mark. */
+  assert(!exists(path("root/org.test.capture/.dockbar-install")));
   /* The installed drawer itself is not a source. */
   assert(install(path("root/org.test.capture"), c, &t, text) ==
          DA_INSTALL_REFUSED);
@@ -131,6 +181,31 @@ int main(int argc, char **argv) {
     assert(!exists(path("root/.org.test.capture.stale-1")) &&
            c->count == 1 && !strcmp(c->packages[0].version, "0.1.0"));
   }
+  /* The new copy cannot be put in place and the old one cannot be put
+   * back: the result says where the old one is, and the next install puts
+   * it back and updates. */
+  snprintf(blocked, sizeof blocked, "%s", path("root/org.test.capture"));
+  block_count = 2;
+  dock_applet_install_test_rename(blocking_rename);
+  assert(install(path("v2"), c, &t, text) == DA_INSTALL_FAILED &&
+         strstr(text, "kept in") && strstr(text, ".org.test.capture.old"));
+  dock_applet_install_test_rename(NULL);
+  assert(c->count == 0 && exists(path("root/.org.test.capture.old/applet.json")) &&
+         !exists(path("root/.org.test.capture.installing")));
+  assert(install(path("v2"), c, &t, text) == DA_INSTALL_UPDATED);
+  assert(c->count == 1 && !strcmp(c->packages[0].version, "0.2.0") &&
+         !exists(path("root/.org.test.capture.old")) &&
+         !exists(path("root/org.test.capture/.dockbar-install")));
+  /* The new copy cannot be put in place but the old one goes back. */
+  block_count = 1;
+  dock_applet_install_test_rename(blocking_rename);
+  assert(install(path("v1"), c, &t, text) == DA_INSTALL_FAILED &&
+         strstr(text, "nothing was changed"));
+  dock_applet_install_test_rename(NULL);
+  assert(c->count == 1 && !strcmp(c->packages[0].version, "0.2.0") &&
+         !exists(path("root/.org.test.capture.old")) &&
+         !exists(path("root/.org.test.capture.installing")) &&
+         !exists(path("root/org.test.capture/.dockbar-install")));
   /* Two installed packages with the ID: refused. */
   assert(!mkdir(path("root/copy"), 0755));
   put(path("root/copy"), "applet.json", "{}");
@@ -139,6 +214,7 @@ int main(int argc, char **argv) {
   assert(install(path("v1"), c, &t, text) == DA_INSTALL_REFUSED &&
          strstr(text, "Two installed"));
   free(c);
-  puts("applet install: new, update, refusals, rollback and recovery passed");
+  puts("applet install: new, update, refusals, foreign drawers, rollback and "
+       "recovery passed");
   return 0;
 }
