@@ -18,3 +18,7 @@ Select `DOCK_TARGET` and export matching compiler, SDK and SVG inputs before bui
 | `test-sprite.sh` | Test sprite decoding and timing |
 
 The separate `build-macaros.sh` is not part of the three-target release workflow. Build and packaging scripts do not boot a VM or install system libraries. Native persistence probes require a disposable configuration path.
+
+## Publication boundaries
+
+Run `python3 scripts/check-publication.py --ref HEAD` before publishing source. The CI job also checks ZIP and TAR exports. For a downloaded GitHub source archive, use `--archive PATH`. This project excludes local agent instructions, workspace configuration, private evidence and purchased source artwork. Content, licence and actual public-download reviews are separate checks; a passing job does not certify them.

@@ -1,0 +1,20 @@
+name: Publication boundaries
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  source-boundaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: python3 tests/test_publication.py
+      - run: python3 scripts/check-publication.py --ref HEAD
+      - name: Check generated source archives
+        run: |
+          git archive --format=zip --prefix=source/ HEAD > "$RUNNER_TEMP/source.zip"
+          git archive --format=tar.gz --prefix=source/ HEAD > "$RUNNER_TEMP/source.tar.gz"
+          python3 scripts/check-publication.py --archive "$RUNNER_TEMP/source.zip"
+          python3 scripts/check-publication.py --archive "$RUNNER_TEMP/source.tar.gz"
