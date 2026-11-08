@@ -19,7 +19,9 @@
 #define AS_DIR "SYS:WBStartup"
 #define AS_MAX_ENTRIES 16
 #define AS_MAX_TOOLTYPES 24
-#define AS_VERSION_TAG "$VER: Dockbar "
+/* "$VER: Dockbar " without the "$": a whole tag here would be found in
+   this program by Version and by dockbar_version() itself. */
+#define AS_VERSION_REST "VER: Dockbar "
 
 enum { KIND_LAUNCHER_OURS = 1, KIND_LAUNCHER_OTHER, KIND_COPY };
 
@@ -69,7 +71,7 @@ static int dockbar_version(const char *path, char *version, size_t size)
        it are always seen whole in one of them. */
     enum { BLOCK = 8192, WINDOW = 64 };
     static char buffer[BLOCK + WINDOW];
-    const size_t tag = sizeof AS_VERSION_TAG - 1;
+    const size_t tag = sizeof AS_VERSION_REST;
     size_t kept = 0;
     LONG got;
     int found = 0, end = 0;
@@ -87,10 +89,12 @@ static int dockbar_version(const char *path, char *version, size_t size)
         /* Before the end, a tag in the last WINDOW bytes is seen next time. */
         limit = end ? total : (total > WINDOW ? total - WINDOW : 0);
         for (size_t i = 0; i < limit && i + tag <= total; i++)
-            if (buffer[i] == '$' && !memcmp(buffer + i, AS_VERSION_TAG, tag)) {
+            if (buffer[i] == '$' && !memcmp(buffer + i + 1, AS_VERSION_REST, tag - 1)) {
                 size_t k = 0, at = i + tag;
                 while (at + k < total && k + 1 < size && buffer[at + k] > ' ' && buffer[at + k] != '(')
                     k++;
+                if (!k || buffer[at] < '0' || buffer[at] > '9')
+                    continue; /* not a version string */
                 if (size) {
                     memcpy(version, buffer + at, k);
                     version[k] = '\0';
