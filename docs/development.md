@@ -91,7 +91,7 @@ Removing a shortcut does not delete its target. Removing a widget also removes i
 | `--no-compose` | Use desktop capture instead of system window composition |
 | `--no-transitions` | Disable widget data crossfades |
 | `--widgets PATH` | Widget package root; default `PROGDIR:Widgets` |
-| `--wbstartup on\|off\|status` | Write, remove or report the start icon `SYS:WBStartup/Dockbar.info` (a project icon whose default tool is this program), then exit; `on` replaces a recognised copy of the program there and takes over its settings when this drawer has none. With `--no-compose`, the icon gets the `NOCOMPOSE` tool type |
+| `--wbstartup on\|replace\|off\|status` | Write, remove or report the start icon `SYS:WBStartup/Dockbar.info` (a project icon whose default tool is this program), then exit. `on` and `off` change only this program's own start icon; with a copy of the program or another installation's start icon there, `on` changes nothing. `replace` also removes those, and takes over a copy's settings when this drawer has none. An icon that cannot be read, a drawer read only in part or another entry named like the program stops `on` and `replace`. Exit 0 done, 5 done in part (the message names what is left), 10 not changed. With `--no-compose`, the icon gets the `NOCOMPOSE` tool type. Rules: `src/autostart_plan.h`, tested by `tests/test_autostart_plan.c` |
 | `--widget-state PATH` | Writable state root; default `PROGDIR:WidgetState` |
 | `--svg-library PATH` | Renderer path; default `PROGDIR:libs/svgicon.library` |
 | `--full-redraw` | Diagnostic comparison without partial redraws |

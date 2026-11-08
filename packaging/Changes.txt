@@ -4,17 +4,19 @@ Dockbar changes
 0.6.1
 -----
 - Start with Wanderer: a new choice in Preferences (Defaults for all
-  docks), also as Dockbar --wbstartup on, off or status. It puts a start
-  icon into SYS:WBStartup that starts the Dockbar in its own drawer, so
-  that Dockbar finds its widgets there and an update of that drawer is
-  what starts next time. The start icon takes the tool types NOCOMPOSE
-  and LOG=<file>.
+  docks), also as Dockbar --wbstartup on, off, replace or status. It puts
+  a start icon into SYS:WBStartup that starts the Dockbar in its own
+  drawer, so that Dockbar finds its widgets there and an update of that
+  drawer is what starts next time. The start icon takes the tool types
+  NOCOMPOSE and LOG=<file>. On and off change only this Dockbar's own
+  start icon; another installation's start icon or a copy is replaced
+  only when you confirm it (Replace).
 - A copy of the Dockbar program in SYS:WBStartup did not find its widgets
   (Weather was missing) and kept starting after Dockbar was updated.
   Started from its own drawer, Dockbar now offers to replace such a copy
-  with the start icon, and takes over the copy's docks and widget
-  settings when its own drawer has none yet. The copy's settings files
-  stay in SYS:WBStartup.
+  with the start icon, says first what happens to the settings, and
+  takes over the copy's docks and widget settings when its own drawer has
+  none yet. The copy's settings files stay in SYS:WBStartup.
 - Started again from the start icon while Dockbar is already running (for
   example also from S:User-Startup), Dockbar ends quietly instead of
   opening Preferences.

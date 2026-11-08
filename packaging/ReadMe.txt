@@ -35,6 +35,16 @@ delete SYS:WBStartup/Dockbar.info yourself. From a Shell the same is
   Work:Dockbar/Dockbar --wbstartup off
   Work:Dockbar/Dockbar --wbstartup status
 
+On and off change only this Dockbar's own start icon. If SYS:WBStartup
+already starts another Dockbar (a second installation, or a copy of the
+program), on changes nothing and says so. To start this Dockbar instead,
+confirm Replace when Preferences asks, or use
+
+  Work:Dockbar/Dockbar --wbstartup replace
+
+Dockbar also changes nothing when an icon in SYS:WBStartup cannot be
+read, or when SYS:WBStartup/Dockbar is something else; it names the file.
+
 Options for this start go into the start icon's tool types (Information
 in Wanderer's Icon menu): NOCOMPOSE for --no-compose, LOG=RAM:dockbar.log
 for --log. Dockbar --wbstartup on --no-compose writes NOCOMPOSE for you.
@@ -63,13 +73,15 @@ comes first, and the start icon then ends quietly.
 
 A copy of Dockbar in SYS:WBStartup: if Dockbar finds one when you start
 it from its own drawer, it asks whether to start this Dockbar with
-Wanderer instead. Replace the copy, and the copy's docks.config,
-dock.pins and WidgetState are copied into this drawer, when it has none
-of them yet; the originals stay in SYS:WBStartup. The copy and its icon
-are then deleted, and the start icon takes their place. If this drawer
-has settings of its own already, both sets stay, and Dockbar says how to
-use the copy's instead. To do this, quit the copy first (Quit in the
-dock's menu), then double-click Dockbar in its drawer.
+Wanderer instead, and says first what happens to the settings. Replace
+the copy, and the copy's docks.config, dock.pins and WidgetState are
+copied into this drawer, when it has none of them yet; the originals stay
+in SYS:WBStartup. The copy and its icon are then deleted, and the start
+icon takes their place. If this drawer has settings of its own already,
+both sets stay, and Dockbar says which differ and how to use the copy's
+instead. To do this, quit the copy first (Quit in the dock's menu), then
+double-click Dockbar in its drawer. If the copy or its icon cannot be
+deleted, Dockbar says which file is left and whether it still starts.
 
 A start line written for an older version may still have --svg and a
 file name: that option is no longer used. Dockbar ignores both and starts

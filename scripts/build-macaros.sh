@@ -17,7 +17,7 @@ mkdir -p "$output/package" "$output/obj"
 python3 "$repo/scripts/tabler-masks.py" "$repo/assets/tabler" 20 "$output/gen/tabler_masks.h" \
  adjustments-horizontal x chevron-left chevron-right refresh
 rm -f "$output/obj/"*.o
-for f in main migrate autostart fade sprite pak drawer_panel dirlist icon_cache model config interaction group_panel chrome frame prefs prefs_window prefs_strings grip_menu about item_list layout magnify hover \
+for f in main migrate autostart autostart_plan fade sprite pak drawer_panel dirlist icon_cache model config interaction group_panel chrome frame prefs prefs_window prefs_strings grip_menu about item_list layout magnify hover \
          applets/view applets/cards_aros applets/cache applets/json applets/package applets/snapshot applets/instance applets/settings applets/worker_aros applets/purge applets/panel_aros docks widget item_editor native_icons svg_icons resample snapshot theme textrender_none fontfile command; do
   "$XT/bin/clang" --target=aarch64-unknown-aros -mcmodel=large -ffixed-x18 -D__arm64__ -DDOCK_NO_FREETYPE -DDOCK_NO_PNG -DDOCK_APPLET_VARIANT=\"aarch64-macaros\" -O2 \
     -std=gnu99 -Wall -Wextra -Werror -Winfinite-recursion -Wno-unused-command-line-argument \

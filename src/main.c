@@ -2522,9 +2522,10 @@ static void open_prefs(int view) {
    dock_prefs_window_composed[i]=(unsigned char)c;if(i<app.set.count && !c)all=0;}
   dock_prefs_window_all_composed=all && app.compose_ok;}
  {struct DockAutostart a;int known=dock_autostart_check(&a);
-  /* Off also for a copy or another Dockbar: turning it on makes it this one. */
+  /* Ticked for this Dockbar's own start icon only; a copy or another
+   * installation's icon is replaced only when asked on Save. */
   dock_prefs_window_autostart=!known || a.state==DOCK_AUTOSTART_SELF_COPY || a.state==DOCK_AUTOSTART_BLOCKED ||
-   a.state==DOCK_AUTOSTART_UNKNOWN?-1:a.state==DOCK_AUTOSTART_ON;}
+   a.state==DOCK_AUTOSTART_UNKNOWN || a.state==DOCK_AUTOSTART_INCOMPLETE?-1:a.ours;}
  int opened=dock_prefs_window_open(&app.prefs,app.screen,&app.set,view,-1,-1);
  unlock_screen();
  if(opened){prefs_original=app.set;prefs_applied=0;}
@@ -2789,16 +2790,28 @@ static void poll_prefs(void) {
   if(before>=0 && wanted!=before){
    /* The settings are saved by now, so a copy's are never taken over here
     * (autostart.h): both stay, and the message says how to choose. */
-   static char message[1200];
-   int done=wanted?dock_autostart_enable(0,app.no_compose,message,sizeof message,note):
-    dock_autostart_disable(message,sizeof message,note);
-   note("PREFS start with Wanderer %s result=%d",wanted?"on":"off",done);
-   if(message[0] || !done){
-    struct EasyStruct told={sizeof(struct EasyStruct),0,(CONST_STRPTR)"Dockbar",(CONST_STRPTR)"%s",(CONST_STRPTR)"OK"};
-    struct Process *me=(struct Process *)FindTask(NULL);APTR saved=me->pr_WindowPtr;me->pr_WindowPtr=app.requesters;
-    EasyRequest(NULL,&told,NULL,(IPTR)(message[0]?message:"Start with Wanderer was not changed."));
-    me->pr_WindowPtr=saved;
+   static char message[1600],text[1600];
+   struct Process *me=(struct Process *)FindTask(NULL);APTR saved=me->pr_WindowPtr;me->pr_WindowPtr=app.requesters;
+   int replace=0,asked=1;
+   if(wanted){
+    /* Something else starting a Dockbar is replaced only when confirmed. */
+    struct DockAutostart a;
+    if(dock_autostart_check(&a) && (a.state==DOCK_AUTOSTART_COPY || a.state==DOCK_AUTOSTART_OTHER)){
+     snprintf(text,sizeof text,"%s\n%s\n\nStart this Dockbar with Wanderer instead?%s",
+      a.state==DOCK_AUTOSTART_COPY?"Wanderer starts a copy of Dockbar:":"Wanderer starts another Dockbar:",a.found,
+      a.state==DOCK_AUTOSTART_COPY?"\nThe copy's settings are not taken over: those here are kept,\nand the copy's stay in SYS:WBStartup.":"");
+     struct EasyStruct ask={sizeof(struct EasyStruct),0,(CONST_STRPTR)"Dockbar",(CONST_STRPTR)"%s",(CONST_STRPTR)"Replace|Keep it"};
+     asked=EasyRequest(NULL,&ask,NULL,(IPTR)text)==1;replace=asked;
+    }
    }
+   int done=!asked?DOCK_AUTOSTART_UNCHANGED:wanted?dock_autostart_enable(replace,0,app.no_compose,message,sizeof message,note):
+    dock_autostart_disable(message,sizeof message,note);
+   note("PREFS start with Wanderer %s replace=%d result=%d",wanted?"on":"off",replace,done);
+   if(asked && (message[0] || done==DOCK_AUTOSTART_UNCHANGED)){
+    struct EasyStruct told={sizeof(struct EasyStruct),0,(CONST_STRPTR)"Dockbar",(CONST_STRPTR)"%s",(CONST_STRPTR)"OK"};
+    EasyRequest(NULL,&told,NULL,(IPTR)(message[0]?message:"Start with Wanderer was not changed."));
+   }
+   me->pr_WindowPtr=saved;
   }
   return;
  }
@@ -3208,7 +3221,7 @@ static int object_exists(const char *path) {
 }
 static int usage(void) {
  puts("Dockbar " DOCK_VERSION " [--icon-size 32..72] [--corner 0..8] [--seconds N] [--log PATH] [--config PATH]"
-      " [--legacy-config PATH] [--legacy-prefs PATH] [--pins PATH] [--svg-library PATH] [--widgets PATH] [--widget-state PATH] [--no-transitions] [--log-entries] [--reopen-on-resize] [--full-redraw] [--no-compose] [--wbstartup on|off|status]");
+      " [--legacy-config PATH] [--legacy-prefs PATH] [--pins PATH] [--svg-library PATH] [--widgets PATH] [--widget-state PATH] [--no-transitions] [--log-entries] [--reopen-on-resize] [--full-redraw] [--no-compose] [--wbstartup on|replace|off|status]");
  return 20;
 }
 /* A widget instance still shown or edited somewhere is not freed, whatever
@@ -3226,17 +3239,23 @@ static int widget_in_use(const struct DockAppletRuntime *r) {
  * taken over. */
 static void offer_copy_replacement(void) {
  struct DockAutostart a;
- static char text[1400],message[1200];
+ static char text[1400],message[1600];
+ /* What happens to the settings is said before the choice. */
+ static const char *const settings[]={"",
+  "Its docks, pinned items and widget settings are copied here;\nthe copy's files stay in SYS:WBStartup.",
+  "The settings here are the same as the copy's.",
+  "This drawer has settings of its own, different from the copy's.\nThey are kept, and the copy's are not taken over;\nthey stay in SYS:WBStartup.",
+  "The copy's widget settings are not taken over;\nthey stay in SYS:WBStartup."};
  if(!dock_autostart_check(&a) || a.state!=DOCK_AUTOSTART_COPY)return;
- note("AUTOSTART copy found %s version=%s settings=%d",a.found,a.version,a.copy_settings);
+ note("AUTOSTART copy found %s version=%s settings=%d",a.found,a.version,a.settings);
  snprintf(text,sizeof text,"Wanderer starts a copy of Dockbar %s:\n%s\n\n"
   "The copy is not updated with this Dockbar and does not find\nits widgets. Start this Dockbar with Wanderer instead?\n%s",
-  a.version,a.found,a.copy_settings?"The copy's docks are taken over; its files stay where they are.":"");
+  a.version,a.found,a.settings>=0 && a.settings<=DOCK_SETTINGS_LEFT?settings[a.settings]:"");
  struct EasyStruct ask={sizeof(struct EasyStruct),0,(CONST_STRPTR)"Dockbar",(CONST_STRPTR)"%s",(CONST_STRPTR)"Replace the copy|Not now"};
  struct Process *me=(struct Process *)FindTask(NULL);APTR saved=me->pr_WindowPtr;me->pr_WindowPtr=app.requesters;
  LONG answer=EasyRequest(NULL,&ask,NULL,(IPTR)text);
  if(answer==1){
-  int done=dock_autostart_enable(1,app.no_compose,message,sizeof message,note);
+  int done=dock_autostart_enable(1,1,app.no_compose,message,sizeof message,note);
   note("AUTOSTART replace copy result=%d",done);
   if(message[0]){
    struct EasyStruct told={sizeof(struct EasyStruct),0,(CONST_STRPTR)"Dockbar",(CONST_STRPTR)"%s",(CONST_STRPTR)"OK"};
@@ -3251,20 +3270,24 @@ static int wbstartup_command(const char *action) {
  struct DockAutostart a;
  if(!strcmp(action,"status")){
   static const char *const names[]={"off","on","on, for another Dockbar","a copy of Dockbar starts",
-   "this Dockbar is a copy in SYS:WBStartup","blocked: SYS:WBStartup/Dockbar is something else","unknown"};
+   "this Dockbar is a copy in SYS:WBStartup","blocked","unknown","unknown: SYS:WBStartup could not be read to the end"};
   if(!dock_autostart_check(&a)){printf("Dockbar: SYS:WBStartup or this program was not found.\n");return 10;}
-  printf("Start with Wanderer: %s\n",names[a.state>=0 && a.state<=DOCK_AUTOSTART_UNKNOWN?a.state:DOCK_AUTOSTART_UNKNOWN]);
+  printf("Start with Wanderer: %s\n",names[a.state>=0 && a.state<=DOCK_AUTOSTART_INCOMPLETE?a.state:DOCK_AUTOSTART_UNKNOWN]);
+  if(a.ours && a.state!=DOCK_AUTOSTART_ON)printf("This Dockbar's start icon is there too.\n");
   if(a.found[0])printf("Found: %s (version %s)%s\n",a.found,a.version,a.copy_settings?", with settings in SYS:WBStartup":"");
+  if(a.problem[0])printf("Not a Dockbar start icon, or could not be read: %s\n",a.problem);
   if(a.user_startup)printf("S:User-Startup names Dockbar on line %d.\n",a.user_startup);
   return a.state==DOCK_AUTOSTART_ON?0:5;
  }
  int running;
  Forbid();running=FindPort((CONST_STRPTR)"Dockbar")!=NULL;Permit();
- int done=!strcmp(action,"on")?dock_autostart_enable(!running,app.no_compose,message,sizeof message,note):
+ int on=strcmp(action,"off")!=0;
+ int done=on?dock_autostart_enable(!strcmp(action,"replace"),!running,app.no_compose,message,sizeof message,note):
   dock_autostart_disable(message,sizeof message,note);
  if(message[0])printf("%s\n",message);
- printf("Dockbar: start with Wanderer %s%s.\n",!strcmp(action,"on")?"on":"off",done?"":" not changed");
- return done?0:10;
+ printf("Dockbar: start with Wanderer %s%s.\n",on?"on":"off",
+  done==DOCK_AUTOSTART_DONE?"":done==DOCK_AUTOSTART_PARTIAL?", not completely":" not changed");
+ return done==DOCK_AUTOSTART_DONE?0:done==DOCK_AUTOSTART_PARTIAL?5:10;
 }
 int main(int argc,char **argv) {
  int seconds=0,old_svg=0,autostart_quiet=0;const char *logpath=NULL,*wbstartup_action=NULL,*library="PROGDIR:libs/svgicon.library",*applets="PROGDIR:Widgets",*applet_state="PROGDIR:WidgetState";int widgets_given=0,state_given=0;
@@ -3283,7 +3306,8 @@ int main(int argc,char **argv) {
   else if(!strcmp(argv[i],"--full-redraw"))dock_partial_redraw=0;
   else if(!strcmp(argv[i],"--no-compose"))app.no_compose=1;
   else if(!strcmp(argv[i],"--wbstartup") && i+1<argc){wbstartup_action=argv[++i];
-   if(strcmp(wbstartup_action,"on") && strcmp(wbstartup_action,"off") && strcmp(wbstartup_action,"status"))return usage();}
+   if(strcmp(wbstartup_action,"on") && strcmp(wbstartup_action,"replace") && strcmp(wbstartup_action,"off") &&
+    strcmp(wbstartup_action,"status"))return usage();}
   else if(!strcmp(argv[i],"--trace-present"))trace_present=1;
   else if(!strcmp(argv[i],"--dump-frames") && i+1<argc)dump_frames=atoi(argv[++i]);
   else if(!strcmp(argv[i],"--config") && i+1<argc)app.config=argv[++i];
