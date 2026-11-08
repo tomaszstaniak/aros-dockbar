@@ -23,6 +23,9 @@ struct DockPrefsWindow {
     void *theme, *background, *own_transparency, *transparency, *glass, *grip, *hover;
     /* Defaults for all docks. */
     void *d_theme, *d_background, *d_transparency, *d_glass, *d_grip, *d_text, *d_hover;
+    /* Start with Wanderer (autostart.h); read into autostart_on on Save. */
+    void *autostart;
+    int autostart_on;
     /* Entry texts of the Inherit choices, rewritten when the defaults change. */
     char inherit[6][48];
     const char *themes[5], *backgrounds[4], *own[3], *glasses[4], *grips[4], *hovers[5];
@@ -42,6 +45,9 @@ extern int dock_prefs_window_failed;
  * there. The defaults' choice is fixed only when every dock is composed. */
 extern unsigned char dock_prefs_window_composed[DOCK_MAX_DOCKS];
 extern int dock_prefs_window_all_composed;
+/* Set before opening: Start with Wanderer is on (1), off (0), or cannot be
+ * changed from this Dockbar (-1: shown off and disabled). */
+extern int dock_prefs_window_autostart;
 int dock_prefs_window_poll(struct DockPrefsWindow *w);
 void dock_prefs_window_keep(struct DockPrefsWindow *w);
 /* Shows a message (for example a failed save) in the window's help line,

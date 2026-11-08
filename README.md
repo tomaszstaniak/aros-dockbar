@@ -13,6 +13,9 @@ for mainline AROS on PC, AROS One / ABIv11 on PC, or Raspberry Pi.
 Every package includes SVG icons and Weather.
 
 Unpack the archive and open **Dockbar**. Keep the whole Dockbar drawer together.
+To start it with the system, tick **Start with Wanderer** in Preferences (Defaults
+for all docks) rather than copying the program into SYS:WBStartup: the start icon
+runs the Dockbar in its own drawer, so its widgets are found and updates take effect.
 
 You can also install it with [arospkg](https://github.com/tomaszstaniak/arospkg):
 

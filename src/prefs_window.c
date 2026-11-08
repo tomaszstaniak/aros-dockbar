@@ -306,6 +306,7 @@ void dock_prefs_window_close(struct DockPrefsWindow *w)
 int dock_prefs_window_failed;
 unsigned char dock_prefs_window_composed[DOCK_MAX_DOCKS];
 int dock_prefs_window_all_composed;
+int dock_prefs_window_autostart = -1;
 static int any_composed(void)
 {
     for (int i = 0; i < DOCK_MAX_DOCKS; i++) if (dock_prefs_window_composed[i]) return 1;
@@ -399,7 +400,13 @@ int dock_prefs_window_open(struct DockPrefsWindow *w, struct Screen *screen,
         !label(MUIMasterBase, f, PS(PS_TEXT)) || !(w->d_text = cycle(MUIMasterBase, f, d_texts)) ||
         !label(MUIMasterBase, f, PS(PS_HOVER)) || !(w->d_hover = cycle(MUIMasterBase, f, d_hovers)) ||
         !note(MUIMasterBase, f, PS(PS_NOTE_HOVER)) ||
+        !label(MUIMasterBase, f, PS(PS_AUTOSTART)) ||
+        !(row = attach(MUIMasterBase, f, new_object(MUIC_Group, MUIA_Group_Horiz, TRUE, TAG_DONE))) ||
+        !(w->autostart = checkmark(MUIMasterBase, row)) || !filler(MUIMasterBase, row) ||
+        !note(MUIMasterBase, f, PS(dock_prefs_window_autostart < 0 ? PS_NOTE_AUTOSTART_OFF : PS_NOTE_AUTOSTART)) ||
         !filler(MUIMasterBase, defaults_page)) FAIL;
+    SetAttrs(w->autostart, MUIA_Selected, dock_prefs_window_autostart > 0 ? TRUE : FALSE, TAG_DONE);
+    set_disabled(w->autostart, dock_prefs_window_autostart < 0);
     dock_page = page(MUIMasterBase, right);
     if (!dock_page || !(w->header = attach(MUIMasterBase, dock_page, new_object(MUIC_Text, MUIA_Text_Contents, (IPTR)"", TAG_DONE))))
         FAIL;
@@ -525,7 +532,8 @@ int dock_prefs_window_poll(struct DockPrefsWindow *w)
         show_help(w);
         break;
     case ID_APPLY: take(w); inherit_texts(w, 1); show(w); w->result = DOCK_PREFS_APPLY; break;
-    case ID_SAVE: take(w); w->result = DOCK_PREFS_SAVE; break;
+    case ID_SAVE: take(w); w->autostart_on = attr_get(w->autostart, MUIA_Selected) ? 1 : 0;
+        w->result = DOCK_PREFS_SAVE; break;
     case ID_HELP: w->result = DOCK_PREFS_HELP; break;
     case ID_CANCEL: w->result = DOCK_PREFS_CANCEL; break;
     default:

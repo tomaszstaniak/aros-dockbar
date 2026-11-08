@@ -149,28 +149,39 @@ struct item {
     char from[MIGRATE_PATH], staged[MIGRATE_PATH], final[MIGRATE_PATH];
 };
 
+int dock_migrate_has_settings(void)
+{
+    return exists("PROGDIR:docks.config") || exists("PROGDIR:dock.config") ||
+           exists("PROGDIR:dock.pins") || exists("PROGDIR:WidgetState");
+}
+
 int dock_migrate_from_sibling(const char *new_name, const char *old_name,
                               void (*note)(const char *format, ...))
+{
+    char here[MIGRATE_PATH], old[MIGRATE_PATH];
+    BPTR progdir = GetProgramDir();
+
+    if (!progdir || !NameFromLock(progdir, (STRPTR)here, sizeof here))
+        return 0;
+    if (strcasecmp((const char *)FilePart((STRPTR)here), new_name) != 0)
+        return 0;
+    snprintf(old, sizeof old, "%s", here);
+    *PathPart((STRPTR)old) = '\0';
+    if (!AddPart((STRPTR)old, (CONST_STRPTR)old_name, sizeof old))
+        return 0;
+    return dock_migrate_from_dir(old, note);
+}
+
+int dock_migrate_from_dir(const char *old, void (*note)(const char *format, ...))
 {
     /* docks.config last: once it is in place the migration is done, and an
        interrupted one is started again from the beginning. */
     struct item items[] = {{"WidgetState", 0, "", "", ""}, {"dock.pins", 0, "", "", ""},
                            {"docks.config", 0, "", "", ""}};
     const int count = (int)(sizeof items / sizeof items[0]);
-    char here[MIGRATE_PATH], old[MIGRATE_PATH];
-    BPTR progdir = GetProgramDir();
     int i, ok = 1;
 
-    if (!progdir || !NameFromLock(progdir, (STRPTR)here, sizeof here))
-        return 0;
-    if (strcasecmp((const char *)FilePart((STRPTR)here), new_name) != 0)
-        return 0;
-    if (exists("PROGDIR:docks.config") || exists("PROGDIR:dock.config") ||
-        exists("PROGDIR:dock.pins") || exists("PROGDIR:WidgetState"))
-        return 0;
-    snprintf(old, sizeof old, "%s", here);
-    *PathPart((STRPTR)old) = '\0';
-    if (!AddPart((STRPTR)old, (CONST_STRPTR)old_name, sizeof old))
+    if (dock_migrate_has_settings())
         return 0;
     for (i = 0; i < count; i++) {
         if (!join(items[i].from, sizeof items[i].from, old, items[i].name) ||

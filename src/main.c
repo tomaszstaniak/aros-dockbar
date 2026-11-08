@@ -60,6 +60,7 @@
 #include "command.h"
 #include "version.h"
 #include "migrate.h"
+#include "autostart.h"
 #include "present.h"
 #include "alpha.h"
 
@@ -2520,6 +2521,10 @@ static void open_prefs(int view) {
    int c=i<app.set.count?(app.views[i].window?app.views[i].compose:app.compose_ok && !app.compose_refused[i]):app.compose_ok;
    dock_prefs_window_composed[i]=(unsigned char)c;if(i<app.set.count && !c)all=0;}
   dock_prefs_window_all_composed=all && app.compose_ok;}
+ {struct DockAutostart a;int known=dock_autostart_check(&a);
+  /* Off also for a copy or another Dockbar: turning it on makes it this one. */
+  dock_prefs_window_autostart=!known || a.state==DOCK_AUTOSTART_SELF_COPY || a.state==DOCK_AUTOSTART_BLOCKED ||
+   a.state==DOCK_AUTOSTART_UNKNOWN?-1:a.state==DOCK_AUTOSTART_ON;}
  int opened=dock_prefs_window_open(&app.prefs,app.screen,&app.set,view,-1,-1);
  unlock_screen();
  if(opened){prefs_original=app.set;prefs_applied=0;}
@@ -2777,9 +2782,24 @@ static void poll_prefs(void) {
    * icons or scrolls for as long as the screen is too small. */
   next_set=*app.prefs.set;
   if(app.readonly || !dock_set_save(&next_set,app.config)){dock_prefs_window_message(&app.prefs,PS(app.readonly?PS_SAVE_READONLY:PS_SAVE_FAILED));note("PREFS save failed file=%s",app.config);dock_prefs_window_keep(&app.prefs);return;}
+  int wanted=app.prefs.autostart_on,before=dock_prefs_window_autostart;
   dock_prefs_window_close(&app.prefs);prefs_applied=0;
   app.set=next_set;app.rebuild=1;app.reopen_view=-1;feedback(0,"Preferences saved");
   note("PREFS saved docks=%d",app.set.count);
+  if(before>=0 && wanted!=before){
+   /* The settings are saved by now, so a copy's are never taken over here
+    * (autostart.h): both stay, and the message says how to choose. */
+   static char message[1200];
+   int done=wanted?dock_autostart_enable(0,app.no_compose,message,sizeof message,note):
+    dock_autostart_disable(message,sizeof message,note);
+   note("PREFS start with Wanderer %s result=%d",wanted?"on":"off",done);
+   if(message[0] || !done){
+    struct EasyStruct told={sizeof(struct EasyStruct),0,(CONST_STRPTR)"Dockbar",(CONST_STRPTR)"%s",(CONST_STRPTR)"OK"};
+    struct Process *me=(struct Process *)FindTask(NULL);APTR saved=me->pr_WindowPtr;me->pr_WindowPtr=app.requesters;
+    EasyRequest(NULL,&told,NULL,(IPTR)(message[0]?message:"Start with Wanderer was not changed."));
+    me->pr_WindowPtr=saved;
+   }
+  }
   return;
  }
  if(result==DOCK_PREFS_APPLY){
@@ -3188,7 +3208,7 @@ static int object_exists(const char *path) {
 }
 static int usage(void) {
  puts("Dockbar " DOCK_VERSION " [--icon-size 32..72] [--corner 0..8] [--seconds N] [--log PATH] [--config PATH]"
-      " [--legacy-config PATH] [--legacy-prefs PATH] [--pins PATH] [--svg-library PATH] [--widgets PATH] [--widget-state PATH] [--no-transitions] [--log-entries] [--reopen-on-resize] [--full-redraw] [--no-compose]");
+      " [--legacy-config PATH] [--legacy-prefs PATH] [--pins PATH] [--svg-library PATH] [--widgets PATH] [--widget-state PATH] [--no-transitions] [--log-entries] [--reopen-on-resize] [--full-redraw] [--no-compose] [--wbstartup on|off|status]");
  return 20;
 }
 /* A widget instance still shown or edited somewhere is not freed, whatever
@@ -3200,8 +3220,54 @@ static int widget_in_use(const struct DockAppletRuntime *r) {
  dock_applet_ui_forget(r);
  return 0;
 }
+/* A copy of the program in SYS:WBStartup (autostart.h) runs instead of
+ * this drawer's Dockbar at every start of Wanderer and is not updated with
+ * it. Asked before the settings are read, so that the copy's docks can be
+ * taken over. */
+static void offer_copy_replacement(void) {
+ struct DockAutostart a;
+ static char text[1400],message[1200];
+ if(!dock_autostart_check(&a) || a.state!=DOCK_AUTOSTART_COPY)return;
+ note("AUTOSTART copy found %s version=%s settings=%d",a.found,a.version,a.copy_settings);
+ snprintf(text,sizeof text,"Wanderer starts a copy of Dockbar %s:\n%s\n\n"
+  "The copy is not updated with this Dockbar and does not find\nits widgets. Start this Dockbar with Wanderer instead?\n%s",
+  a.version,a.found,a.copy_settings?"The copy's docks are taken over; its files stay where they are.":"");
+ struct EasyStruct ask={sizeof(struct EasyStruct),0,(CONST_STRPTR)"Dockbar",(CONST_STRPTR)"%s",(CONST_STRPTR)"Replace the copy|Not now"};
+ struct Process *me=(struct Process *)FindTask(NULL);APTR saved=me->pr_WindowPtr;me->pr_WindowPtr=app.requesters;
+ LONG answer=EasyRequest(NULL,&ask,NULL,(IPTR)text);
+ if(answer==1){
+  int done=dock_autostart_enable(1,app.no_compose,message,sizeof message,note);
+  note("AUTOSTART replace copy result=%d",done);
+  if(message[0]){
+   struct EasyStruct told={sizeof(struct EasyStruct),0,(CONST_STRPTR)"Dockbar",(CONST_STRPTR)"%s",(CONST_STRPTR)"OK"};
+   EasyRequest(NULL,&told,NULL,(IPTR)message);
+  }
+ } else note("AUTOSTART copy kept (not now)");
+ me->pr_WindowPtr=saved;
+}
+/* --wbstartup on|off|status: prints the result and ends; no dock opens. */
+static int wbstartup_command(const char *action) {
+ static char message[1200];
+ struct DockAutostart a;
+ if(!strcmp(action,"status")){
+  static const char *const names[]={"off","on","on, for another Dockbar","a copy of Dockbar starts",
+   "this Dockbar is a copy in SYS:WBStartup","blocked: SYS:WBStartup/Dockbar is something else","unknown"};
+  if(!dock_autostart_check(&a)){printf("Dockbar: SYS:WBStartup or this program was not found.\n");return 10;}
+  printf("Start with Wanderer: %s\n",names[a.state>=0 && a.state<=DOCK_AUTOSTART_UNKNOWN?a.state:DOCK_AUTOSTART_UNKNOWN]);
+  if(a.found[0])printf("Found: %s (version %s)%s\n",a.found,a.version,a.copy_settings?", with settings in SYS:WBStartup":"");
+  if(a.user_startup)printf("S:User-Startup names Dockbar on line %d.\n",a.user_startup);
+  return a.state==DOCK_AUTOSTART_ON?0:5;
+ }
+ int running;
+ Forbid();running=FindPort((CONST_STRPTR)"Dockbar")!=NULL;Permit();
+ int done=!strcmp(action,"on")?dock_autostart_enable(!running,app.no_compose,message,sizeof message,note):
+  dock_autostart_disable(message,sizeof message,note);
+ if(message[0])printf("%s\n",message);
+ printf("Dockbar: start with Wanderer %s%s.\n",!strcmp(action,"on")?"on":"off",done?"":" not changed");
+ return done?0:10;
+}
 int main(int argc,char **argv) {
- int seconds=0,old_svg=0;const char *logpath=NULL,*library="PROGDIR:libs/svgicon.library",*applets="PROGDIR:Widgets",*applet_state="PROGDIR:WidgetState";int widgets_given=0,state_given=0;
+ int seconds=0,old_svg=0,autostart_quiet=0;const char *logpath=NULL,*wbstartup_action=NULL,*library="PROGDIR:libs/svgicon.library",*applets="PROGDIR:Widgets",*applet_state="PROGDIR:WidgetState";int widgets_given=0,state_given=0;
  dock_applet_ui_editable=widget_editable;app.smooth_asked=-1;dock_drag_state_init(&app.drag);
  app.config="PROGDIR:docks.config";app.legacy_config="PROGDIR:dock.config";app.legacy_prefs="PROGDIR:dock.prefs";
  app.pins="PROGDIR:dock.pins";app.cli_corner=-1;
@@ -3216,6 +3282,8 @@ int main(int argc,char **argv) {
   else if(!strcmp(argv[i],"--reopen-on-resize"))dock_resize_in_place=0;
   else if(!strcmp(argv[i],"--full-redraw"))dock_partial_redraw=0;
   else if(!strcmp(argv[i],"--no-compose"))app.no_compose=1;
+  else if(!strcmp(argv[i],"--wbstartup") && i+1<argc){wbstartup_action=argv[++i];
+   if(strcmp(wbstartup_action,"on") && strcmp(wbstartup_action,"off") && strcmp(wbstartup_action,"status"))return usage();}
   else if(!strcmp(argv[i],"--trace-present"))trace_present=1;
   else if(!strcmp(argv[i],"--dump-frames") && i+1<argc)dump_frames=atoi(argv[++i]);
   else if(!strcmp(argv[i],"--config") && i+1<argc)app.config=argv[++i];
@@ -3235,23 +3303,31 @@ int main(int argc,char **argv) {
    fflush(stdout);}
   else{printf("Dockbar: unknown option %s\n",argv[i]);return usage();}
  }
- /* Started from Wanderer: options come from the icon's tool types. */
+ /* Started from Wanderer: options come from the icon's tool types, the
+  * program's own and, when a start icon in SYS:WBStartup (autostart.h)
+  * started it, that icon's. */
  static char wb_log[DOCK_PATH];
  if(argc==0 && argv){
   struct WBStartup *wb=(struct WBStartup*)argv;
-  if(wb->sm_NumArgs>0){
-   BPTR old=CurrentDir(wb->sm_ArgList[0].wa_Lock);
-   struct DiskObject *icon=GetDiskObject((CONST_STRPTR)wb->sm_ArgList[0].wa_Name);
+  if(wb->sm_NumArgs>0)dock_autostart_set_program((const char*)wb->sm_ArgList[0].wa_Name);
+  for(LONG a=0;a<wb->sm_NumArgs && a<2;a++){
+   if(!wb->sm_ArgList[a].wa_Lock || !wb->sm_ArgList[a].wa_Name)continue;
+   BPTR old=CurrentDir(wb->sm_ArgList[a].wa_Lock);
+   struct DiskObject *icon=GetDiskObject((CONST_STRPTR)wb->sm_ArgList[a].wa_Name);
    if(icon){
-    static char log_key[]="LOG";
-    STRPTR value=(STRPTR)FindToolType((CONST STRPTR *)icon->do_ToolTypes,(STRPTR)log_key);
+    static char log_key[]="LOG",compose_key[]="NOCOMPOSE",autostart_key[]="AUTOSTART";
+    CONST STRPTR *types=(CONST STRPTR *)icon->do_ToolTypes;
+    STRPTR value=(STRPTR)FindToolType(types,(STRPTR)log_key);
     if(value){snprintf(wb_log,sizeof wb_log,"%s",(const char*)value);logpath=wb_log;}
+    if(FindToolType(types,(STRPTR)compose_key))app.no_compose=1;
+    if(FindToolType(types,(STRPTR)autostart_key))autostart_quiet=1;
     FreeDiskObject(icon);
    }
    CurrentDir(old);
   }
- }
+ } else if(argc>0)dock_autostart_set_program((const char*)FilePart((STRPTR)argv[0]));
  if(logpath){app.log=fopen(logpath,"w");if(!app.log)return 20;}
+ if(wbstartup_action){int rc=wbstartup_command(wbstartup_action);if(app.log)fclose(app.log);return rc;}
  /* A dock item, panel or drop on a disk that is not inserted (or an assign
   * that is gone) must never stop the dock behind an "insert volume"
   * requester: icon loading, identity checks and drawer reading all touch
@@ -3262,6 +3338,14 @@ int main(int argc,char **argv) {
  static char instance_name[]="Dockbar";
  Forbid();
  struct MsgPort *running=FindPort((CONST_STRPTR)instance_name);
+ if(running && autostart_quiet){
+  /* A start icon in SYS:WBStartup after a start line in S:User-Startup:
+   * the dock is up already, and Preferences are not wanted at boot. */
+  Permit();
+  note("START autostart: Dockbar is already running; this start ends");
+  if(app.log)fclose(app.log);
+  return 0;
+ }
  if(running){
   /* Starting Dockbar again opens the running one's Preferences: the way
    * there that needs no dock, also with every grip hidden. */
@@ -3321,8 +3405,10 @@ int main(int argc,char **argv) {
   * since 0.5.2, and apkg keeps the user's files in the old drawer. Take its
   * settings over once, when this drawer has none yet. */
  if(!state_given && !strcmp(app.config,"PROGDIR:docks.config") && !strcmp(app.pins,"PROGDIR:dock.pins") &&
-    !strcmp(app.legacy_config,"PROGDIR:dock.config"))
+    !strcmp(app.legacy_config,"PROGDIR:dock.config")){
   dock_migrate_from_sibling("dockbar","dockbar-info-only",note);
+  if(ok && !seconds)offer_copy_replacement();
+ }
  /* Widgets were called applets before 0.5-test3: a drawer from an earlier
   * build is still used when the new one is not there. */
  if(!widgets_given && !object_exists("PROGDIR:Widgets") && object_exists("PROGDIR:Applets"))applets="PROGDIR:Applets";

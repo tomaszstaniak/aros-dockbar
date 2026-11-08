@@ -91,6 +91,7 @@ Removing a shortcut does not delete its target. Removing a widget also removes i
 | `--no-compose` | Use desktop capture instead of system window composition |
 | `--no-transitions` | Disable widget data crossfades |
 | `--widgets PATH` | Widget package root; default `PROGDIR:Widgets` |
+| `--wbstartup on\|off\|status` | Write, remove or report the start icon `SYS:WBStartup/Dockbar.info` (a project icon whose default tool is this program), then exit; `on` replaces a recognised copy of the program there and takes over its settings when this drawer has none. With `--no-compose`, the icon gets the `NOCOMPOSE` tool type |
 | `--widget-state PATH` | Writable state root; default `PROGDIR:WidgetState` |
 | `--svg-library PATH` | Renderer path; default `PROGDIR:libs/svgicon.library` |
 | `--full-redraw` | Diagnostic comparison without partial redraws |

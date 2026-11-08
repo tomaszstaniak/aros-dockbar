@@ -40,4 +40,7 @@ const char *const dock_prefs_strings[PS_COUNT] = {
     [PS_SAVE_READONLY] = "\33bNot saved:\33n saved settings are preserved; editing is disabled.",
     [PS_README_MISSING] = "The ReadMe was not found next to Dockbar.",
     [PS_README_FAILED] = "Could not start MultiView.",
+    [PS_AUTOSTART] = "Start with Wanderer",
+    [PS_NOTE_AUTOSTART] = "(an icon in SYS:WBStartup starts this Dockbar; set on Save)",
+    [PS_NOTE_AUTOSTART_OFF] = "(start Dockbar from its own drawer to change this)",
 };

@@ -16,9 +16,32 @@ restart, for example Work: or SYS:. Do not run it from RAM: if you want to
 keep your settings. Double-click the Dockbar icon to start it. Only one
 Dockbar runs at a time; it shows all your docks.
 
-Starting Dockbar with the system: add this line to S:User-Startup
-(create the file with a text editor if it does not exist), with the
-place where you put Dockbar instead of Work:Dockbar:
+Starting Dockbar with the system
+--------------------------------
+Keep Dockbar in its own drawer and let the system start it there. Do not
+copy or move the program into SYS:WBStartup: a copy there does not find
+its widgets (Weather is missing), keeps its own settings there, and is not
+updated when you update Dockbar.
+
+With Wanderer: open Preferences, choose Defaults for all docks, tick
+Start with Wanderer and Save. Dockbar puts a start icon into
+SYS:WBStartup that starts the Dockbar in this drawer, so after an update
+of the drawer (for example apkg upgrade dockbar) the new version starts.
+Untick it and Save to remove the icon. Remove it before you delete or move
+the Dockbar drawer; otherwise Wanderer cannot open it at start, and you
+delete SYS:WBStartup/Dockbar.info yourself. From a Shell the same is
+
+  Work:Dockbar/Dockbar --wbstartup on
+  Work:Dockbar/Dockbar --wbstartup off
+  Work:Dockbar/Dockbar --wbstartup status
+
+Options for this start go into the start icon's tool types (Information
+in Wanderer's Icon menu): NOCOMPOSE for --no-compose, LOG=RAM:dockbar.log
+for --log. Dockbar --wbstartup on --no-compose writes NOCOMPOSE for you.
+
+With S:User-Startup instead: add this line to S:User-Startup (create the
+file with a text editor if it does not exist), with the place where you
+put Dockbar instead of Work:Dockbar:
 
   Run <NIL: >NIL: QUIET Work:Dockbar/Dockbar
 
@@ -34,6 +57,19 @@ desktop never appear. Started this way, Dockbar shows its docks before
 the desktop icons appear; drawer items and dropped icons work once
 Wanderer is up. To log such a start, add --log RAM:dockbar.log at the
 end of the Run line.
+
+Use one of the two. If both are there, the start from S:User-Startup
+comes first, and the start icon then ends quietly.
+
+A copy of Dockbar in SYS:WBStartup: if Dockbar finds one when you start
+it from its own drawer, it asks whether to start this Dockbar with
+Wanderer instead. Replace the copy, and the copy's docks.config,
+dock.pins and WidgetState are copied into this drawer, when it has none
+of them yet; the originals stay in SYS:WBStartup. The copy and its icon
+are then deleted, and the start icon takes their place. If this drawer
+has settings of its own already, both sets stay, and Dockbar says how to
+use the copy's instead. To do this, quit the copy first (Quit in the
+dock's menu), then double-click Dockbar in its drawer.
 
 A start line written for an older version may still have --svg and a
 file name: that option is no longer used. Dockbar ignores both and starts
@@ -411,8 +447,9 @@ Known limitations
   reproduced in QEMU with -vga vmware, while their names still pop up
   under the pointer. A similar symptom was reported in VirtualBox; its
   graphics configuration is not yet confirmed. Use --no-compose as a
-  workaround (add it at the end of the Run line in S:User-Startup, see
-  Installation); see-through docks then show a picture of the desktop
+  workaround (add it at the end of the Run line in S:User-Startup, or
+  NOCOMPOSE to the start icon's tool types, see Starting Dockbar with the
+  system); see-through docks then show a picture of the desktop
   instead. Fixed upstream in commit f9bd1b71 (graphics.library 45.24).
   Verified with VMware SVGA under QEMU. VirtualBox confirmation is
   pending.
