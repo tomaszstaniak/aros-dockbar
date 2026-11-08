@@ -252,7 +252,8 @@ static int scan(struct DockAutostart *a, struct entry *entries, int *count)
     return 1;
 }
 
-/* First line of S:User-Startup, not a comment, that names Dockbar. */
+/* First line of S:User-Startup that names Dockbar, not counting comments and
+   Assign lines (an Assign is the usual first step for a path with spaces). */
 static int user_startup_line(void)
 {
     char line[512];
@@ -266,7 +267,8 @@ static int user_startup_line(void)
         number++;
         while (*p == ' ' || *p == '\t')
             p++;
-        if (*p == ';')
+        /* A comment, or an Assign that only names Dockbar's drawer. */
+        if (*p == ';' || (!strncasecmp(p, "assign", 6) && (p[6] == ' ' || p[6] == '\t')))
             continue;
         for (; *p; p++)
             if (!strncasecmp(p, "dockbar", 7)) {
