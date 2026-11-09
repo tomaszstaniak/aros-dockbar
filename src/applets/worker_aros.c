@@ -344,12 +344,35 @@ static int provider_running(const char *request) {
 static void provider_break(const char *request) {
   provider_signal(request, SIGBREAKF_CTRL_C);
 }
+/* The session drawer can be gone while Dockbar runs: an upgrade through
+ * apkg replaces the whole package drawer and carries the user's files over,
+ * and this drawer is empty between requests. The same happens when the
+ * drawer is copied or restored by hand. Made again here, so the next request
+ * still works; before 0.6.2 every widget action then said "Could not launch
+ * provider" until Dockbar was started again. */
+static int session_drawer(void) {
+  BPTR lock = Lock((CONST_STRPTR)session_root, ACCESS_READ);
+  if (lock) {
+    UnLock(lock);
+    return 1;
+  }
+  if (!directory(state_root) ||
+      !(lock = CreateDir((CONST_STRPTR)session_root))) {
+    NOTE("WIDGET session drawer %s is missing and could not be made again",
+         session_root);
+    return 0;
+  }
+  UnLock(lock);
+  NOTE("WIDGET session drawer %s was missing; made again", session_root);
+  return 1;
+}
 static int request(struct Worker *w, struct DockAppletRuntime *r,
                    const struct DockAppletRequest *q, const char *operation,
                    const char *query, const char *action, uint64_t now) {
   char file[80];
   snprintf(file, sizeof file, "r-%lu.json", ++serial);
-  if (!join(w->request, sizeof w->request, session_root, file))
+  if (!join(w->request, sizeof w->request, session_root, file) ||
+      !session_drawer())
     return 0;
   char a[200], b[200], c[200], d[300], op[100], act[120] = "",
       root[DA_PATH], e[DA_PATH * 2];

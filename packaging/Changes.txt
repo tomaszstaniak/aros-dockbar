@@ -1,6 +1,16 @@
 Dockbar changes
 ===============
 
+0.6.2
+-----
+- Widgets stopped working after the Dockbar drawer was replaced while
+  Dockbar was running, for example by apkg upgrade dockbar. Dockbar keeps
+  a drawer for the requests it sends to its widget providers; it is empty
+  between requests, so a replacement of the Dockbar drawer did not carry
+  it over, and every widget action then said "Could not launch provider"
+  until Dockbar was started again. Dockbar now makes that drawer again
+  when it is missing, and notes it in the log.
+
 0.6.1
 -----
 - Start with Wanderer: a new choice in Preferences (Defaults for all
