@@ -2,7 +2,7 @@
   "id": "stdc-close-stdio-own-handles",
   "upstream": "https://github.com/aros-development-team/AROS",
   "base": "531307d8ca815655d7208220bfe7a332d7f75cc1",
-  "status": "submitted",
+  "status": "merged",
   "v1_applicability": "applies: __close_stdio() in compiler/crt/stdc/__stdio.c, mainline v1; ABIv11 tree not read",
   "checked_upstream": "531307d8ca815655d7208220bfe7a332d7f75cc1",
   "checked_date": "2026-11-02",
@@ -12,6 +12,6 @@
   ],
   "submission_url": "https://github.com/aros-development-team/AROS/pull/2028",
   "submission_revision": "16972ae12aa46c3af5487b34d6f033aac514ee7d",
-  "next_action": "Wait for maintainer review of PR 2028; recheck on the first nightly with it merged",
-  "note": "Covers patch 0003 only. Patches 0001 and 0002 are the unsubmitted backdrop blur prototype. 2026-11-03: in-tree compiler-stdcio (pc-x86_64, GCC 10.5.0) built at 16972ae1, rc 0, no warnings or implicit declarations in __stdio.c."
+  "next_action": "Recheck on the first nightly that contains aeecca86f6, then retire the local copy",
+  "note": "Covers patch 0003. Merged upstream on 2026-11-05 as aeecca86f6b1a7e67a9ba904928b66f4a3e726b5 (PR 2028). The backdrop blur prototype (former patches 0001 and 0002) was removed on 2026-11-10: AROS issue 1981 declined blur in the compositor, so it is not a target API. 2026-11-03: in-tree compiler-stdcio (pc-x86_64, GCC 10.5.0) built at 16972ae1, rc 0, no warnings or implicit declarations in __stdio.c."
 }
