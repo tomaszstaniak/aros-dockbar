@@ -1,0 +1,24 @@
+{
+  "id": "wanderer-initial-title-lifetime",
+  "upstream": "https://github.com/aros-development-team/AROS",
+  "base": "9ec9cbfb63b33fe7b16b4a006b322cbed1325278",
+  "checked_upstream": "9ec9cbfb63b33fe7b16b4a006b322cbed1325278",
+  "checked_date": "2026-11-10",
+  "status": "upstream",
+  "series": [
+    "0001-Wanderer-own-initial-drawer-title.patch"
+  ],
+  "v1_applicability": "Current mainline Wanderer retains the initial drawer location as a borrowed MUI title after its Workbench opening message is freed.",
+  "validation": [
+    "pc-x86_64 v1: workbench-system-wanderer-app and test-intuition built using GCC 10.5.0 and the in-tree SDK at 59860167b36b74f56a96ffbe55ef749e94261002.",
+    "Official 20261110 x86_64 nightly in QEMU: native OpenWorkbenchObjectA reproducer fails on stock Wanderer; patched Wanderer passes twice, with 2048 allocations and 12 resizes per run.",
+    "Manual navigation to SYS:Prefs and Env-Archive and resize preserve titles."
+  ],
+  "tested_targets": [
+    "pc-x86_64 v1 (build and runtime)"
+  ],
+  "next_action": "Follow maintainer review of PR #2219; no Dockbar workaround or release change is needed.",
+  "last_review": "2026-11-10",
+  "submission_url": "https://github.com/aros-development-team/AROS/pull/2219",
+  "submission_revision": "59860167b36b74f56a96ffbe55ef749e94261002"
+}
