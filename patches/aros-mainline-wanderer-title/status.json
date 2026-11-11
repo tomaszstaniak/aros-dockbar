@@ -2,7 +2,7 @@
   "id": "wanderer-initial-title-lifetime",
   "upstream": "https://github.com/aros-development-team/AROS",
   "base": "df648532783c8c88387379f9b1e19ad869c738a4",
-  "checked_upstream": "df648532783c8c88387379f9b1e19ad869c738a4",
+  "checked_upstream": "e54d39164306fbb38d05a9e2fafbed64a1ebce3b",
   "checked_date": "2026-11-11",
   "status": "upstream",
   "series": [
@@ -18,7 +18,7 @@
   "tested_targets": [
     "pc-x86_64 v1 (build and runtime)"
   ],
-  "next_action": "Follow maintainer review of PR #2219; no Dockbar workaround or release change is needed.",
+  "next_action": "PR remains open without human review; master advanced again after the morning rebase, so the branch is BEHIND. Rebase and build before the next submission update; Codacy strlen warnings have been answered.",
   "last_review": "2026-11-11",
   "submission_url": "https://github.com/aros-development-team/AROS/pull/2219",
   "submission_revision": "854058c854218a84bcd7e7b3c4bf6519a8603d0a"

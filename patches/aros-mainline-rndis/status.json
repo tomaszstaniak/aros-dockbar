@@ -2,8 +2,8 @@
   "id": "rndis-prefer-cdc-ethernet",
   "upstream": "https://github.com/aros-development-team/AROS",
   "base": "9c65fbdac03c56093aea2e8d818a6f7b6bd758a6",
-  "checked_upstream": "9c65fbdac03c56093aea2e8d818a6f7b6bd758a6",
-  "checked_date": "2026-11-04",
+  "checked_upstream": "e54d39164306fbb38d05a9e2fafbed64a1ebce3b",
+  "checked_date": "2026-11-11",
   "status": "upstream",
   "submission_url": "https://github.com/aros-development-team/AROS/pull/2098",
   "submission_revision": "95e15bb5d6455570baf957199d1b460277b65068",
@@ -30,6 +30,9 @@
   ],
   "evidence": "https://github.com/aros-development-team/AROS/pull/2098",
   "local_workaround": "Select the network configuration for usbcdceth.device or usbrndis.device according to the driver that actually bound the USB device.",
-  "next_action": "Follow PR #2098 review. When a Pi nightly with the merged fix is installed, the pool netdb-rndis fallback can stay as harmless or be removed after checking.",
-  "last_review": "2026-11-04"
+  "next_action": "Validate current Poseidon on Pi non-SMP and SMP, including cold boot and loaded host. Keep pool network-device selection until verified; do not rebase the closed workaround PR.",
+  "last_review": "2026-11-11",
+  "upstream_state": "closed",
+  "resolution": "Superseded by the Poseidon priority-tier binding fix; this PR was not merged.",
+  "superseded_by": "61d9f787fa341027eb4d42bb966d1fdfb4a022e4"
 }
