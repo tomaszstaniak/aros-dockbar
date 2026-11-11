@@ -1,9 +1,9 @@
 {
   "id": "wanderer-initial-title-lifetime",
   "upstream": "https://github.com/aros-development-team/AROS",
-  "base": "9ec9cbfb63b33fe7b16b4a006b322cbed1325278",
-  "checked_upstream": "9ec9cbfb63b33fe7b16b4a006b322cbed1325278",
-  "checked_date": "2026-11-10",
+  "base": "df648532783c8c88387379f9b1e19ad869c738a4",
+  "checked_upstream": "df648532783c8c88387379f9b1e19ad869c738a4",
+  "checked_date": "2026-11-11",
   "status": "upstream",
   "series": [
     "0001-Wanderer-own-initial-drawer-title.patch"
@@ -12,13 +12,14 @@
   "validation": [
     "pc-x86_64 v1: workbench-system-wanderer-app and test-intuition built using GCC 10.5.0 and the in-tree SDK at 59860167b36b74f56a96ffbe55ef749e94261002.",
     "Official 20261110 x86_64 nightly in QEMU: native OpenWorkbenchObjectA reproducer fails on stock Wanderer; patched Wanderer passes twice, with 2048 allocations and 12 resizes per run.",
-    "Manual navigation to SYS:Prefs and Env-Archive and resize preserve titles."
+    "Manual navigation to SYS:Prefs and Env-Archive and resize preserve titles.",
+    "2026-11-11: unchanged patch rebased onto df648532; workbench-system-wanderer-app and test-intuition rebuilt at 854058c854 with GCC 10.5.0. Wanderer SHA-256 remains 51bf14886e13b1d3affc738ec18df3ca0f3f7594e62e08eeaca7b4542fa9cead, identical to the runtime-tested binary."
   ],
   "tested_targets": [
     "pc-x86_64 v1 (build and runtime)"
   ],
   "next_action": "Follow maintainer review of PR #2219; no Dockbar workaround or release change is needed.",
-  "last_review": "2026-11-10",
+  "last_review": "2026-11-11",
   "submission_url": "https://github.com/aros-development-team/AROS/pull/2219",
-  "submission_revision": "59860167b36b74f56a96ffbe55ef749e94261002"
+  "submission_revision": "854058c854218a84bcd7e7b3c4bf6519a8603d0a"
 }

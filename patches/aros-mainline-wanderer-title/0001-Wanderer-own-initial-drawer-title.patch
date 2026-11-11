@@ -1,4 +1,4 @@
-From 59860167b36b74f56a96ffbe55ef749e94261002 Mon Sep 17 00:00:00 2001
+From 854058c854218a84bcd7e7b3c4bf6519a8603d0a Mon Sep 17 00:00:00 2001
 From: tomaszstaniak <68373859+tomaszstaniak@users.noreply.github.com>
 Date: Tue, 10 Nov 2026 21:08:44 +0100
 Subject: [PATCH] Wanderer: keep drawer titles alive after opening messages are
