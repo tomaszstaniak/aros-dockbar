@@ -17,7 +17,7 @@ Select `DOCK_TARGET` and export matching compiler, SDK and SVG inputs before bui
 | `test-applets.sh` | Test widget parsing, settings, cache and provider behaviour |
 | `test-sprite.sh` | Test sprite decoding and timing |
 
-The separate `build-macaros.sh` is not part of the three-target release workflow. Build and packaging scripts do not boot a VM or install system libraries. Native persistence probes require a disposable configuration path.
+Build and packaging scripts do not boot a VM or install system libraries. Native persistence probes require a disposable configuration path.
 
 ## Publication boundaries
 

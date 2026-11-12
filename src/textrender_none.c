@@ -1,4 +1,4 @@
-/* Builds without FreeType (Macaros has none): Smooth text is never
+/* Builds without FreeType (for an SDK that has none): Smooth text is never
  * available, so every caller keeps the native font. */
 #include "textrender.h"
 #include <string.h>

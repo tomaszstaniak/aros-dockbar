@@ -1,2 +1,0 @@
-The program is built with the Macaros SDK (hosted darwin-aarch64,
-  mainline ABIv1 based) and contains the standard startup code from it.|-

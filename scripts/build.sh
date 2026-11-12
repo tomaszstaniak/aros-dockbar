@@ -31,7 +31,7 @@ fi
 mkdir -p "$output/package/assets" "$output/package/libs" "$output/dev"
 # An endless self-call (0.5-test2 development: open_object calling itself)
 # compiles silently with GCC 10.5, which has no -Winfinite-recursion; clang
-# (the Pi and Macaros toolchains) has it. Use it wherever it exists.
+# (the Pi toolchain) has it. Use it wherever it exists.
 # The card controls are Tabler outline icons rasterised here, so that every
 # package draws them alike, with or without svgicon.library.
 python3 "$repo/scripts/tabler-masks.py" "$repo/assets/tabler" 20 "$output/gen/tabler_masks.h" \

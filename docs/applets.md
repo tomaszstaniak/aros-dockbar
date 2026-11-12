@@ -348,7 +348,7 @@ Playback uses monotonic elapsed time, skips missed frames and loops indefinitely
 The static resource remains the fallback for invalid or unavailable sprites.
 Bounds: 4096×4096 sheet, 512×512 frame, 32 columns, 256 frames and 60 FPS.
 Configured FPS is a target; actual playback depends on the host and rendering load.
-The current Macaros build disables PNG decoding and uses the static resource.
+A build without PNG decoding (`DOCK_NO_PNG`) uses the static resource.
 
 Compact widgets reserve space for their primary value and icon. Secondary information is available in the tooltip and details panel.
 This stable compact width avoids resizing the dock whenever a value changes.

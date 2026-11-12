@@ -323,7 +323,7 @@ int dock_set_save(const struct DockSet *set, const char *path)
     /* AmigaDOS Rename cannot replace a file; .old bridges the gap. */
     if (exists) {
         /* Mainline's C library fails remove() of a missing file without
-         * setting errno (seen on Macaros), so ask whether it is still there. */
+         * setting errno, so ask whether it is still there. */
         if (remove(previous)) {
             FILE *still = fopen(previous, "rb");
             if (still) { fclose(still); remove(temporary); return 0; }
