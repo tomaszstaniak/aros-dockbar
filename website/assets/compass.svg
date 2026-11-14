@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <title>Compass explorer</title>
+  <defs>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#9ce9e0"/><stop offset=".5" stop-color="#36b7b7"/><stop offset="1" stop-color="#167a99"/>
+    </linearGradient>
+    <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#f7fffa"/><stop offset="1" stop-color="#d2ece9"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="48" cy="85" rx="33" ry="5" fill="#092b3b" opacity=".22"/>
+  <circle cx="48" cy="47" r="37" fill="url(#rim)" stroke="#207e98" stroke-width="2"/>
+  <circle cx="48" cy="47" r="30" fill="url(#face)" stroke="#d7fff5" stroke-width="2"/>
+  <path d="M48 21V27M48 67V73M22 47H28M68 47H74" stroke="#509297" stroke-width="2" stroke-linecap="round"/>
+  <path d="M30 29L33 32M63 62L66 65M30 65L33 62M63 32L66 29" stroke="#8fc1bd" stroke-width="2" stroke-linecap="round"/>
+  <path d="M63 25L54 52L33 69L42 42Z" fill="#315b76" opacity=".18" transform="translate(1 2)"/>
+  <path d="M63 25L54 52L42 42Z" fill="#f07760" stroke="#ce6657" stroke-width="1"/>
+  <path d="M33 69L42 42L54 52Z" fill="#356e96" stroke="#285779" stroke-width="1"/>
+  <path d="M63 25L48 47L42 42Z" fill="#ffb18f"/>
+  <path d="M33 69L48 47L54 52Z" fill="#729cb2"/>
+  <circle cx="48" cy="47" r="4" fill="#edf6ee" stroke="#477d88" stroke-width="2"/>
+  <path d="M24 23A34 34 0 0 1 69 19" fill="none" stroke="#e0fff5" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+</svg>

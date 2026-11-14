@@ -2,6 +2,8 @@
 
 An Amiga-style dock for your applications, files and widgets.
 
+[Explore the Dockbar website](https://tomaszstaniak.github.io/aros-dockbar/)
+
 ![Dockbar with the Weather card open on AROS One](docs/screenshots/weather-aros-one.png)
 
 *Your launchers and the forecast, together on the desktop.*
