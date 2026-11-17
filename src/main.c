@@ -785,7 +785,8 @@ static void style_for(const struct DockSet *set,int index,int icon,struct DockSt
   if(item->kind==DOCK_APPLET){
    /* An action widget shows its icon only (no value beside it). */
    const struct DockAppletPackage *pkg=dock_applet_find(dock_applets_catalog(),item->path);
-   s->content_w[i]=pkg && pkg->available && pkg->manual?32:APPLET_TEXT_X+applet_text_room();
+   /* a text-only tile has room for a short word and a number */
+   s->content_w[i]=pkg && pkg->available && pkg->manual?32:pkg && pkg->text_only?text_width("MMM 0.0000"):APPLET_TEXT_X+applet_text_room();
    s->content_h[i]=app.font->tf_YSize;if(s->content_h[i]<32)s->content_h[i]=32;}
   s->present[i]=item_present(d,item);
   if(s->present[i]!=DOCK_PRESENT_ICON){
@@ -1780,12 +1781,15 @@ static void render_view(int index) {
   if(v->nobg && (item->kind==DOCK_CLOCK || item->kind==DOCK_APPLET) && h->w)box(v,h->x,h->y,h->w,h->h,DOCK_HIGHLIGHT_RADIUS,v->c->fill_top);
   if(item->kind==DOCK_APPLET){
    struct DockAppletRuntime *r=vis->applet;int y=s->content.y;
-   char caption[160];fit(caption,sizeof caption,dock_applet_compact(r),s->content.w-APPLET_TEXT_X);
+   /* a text-only widget has no artwork column */
+   int text_x=r && r->package.text_only?0:APPLET_TEXT_X;
+   char caption[160];fit(caption,sizeof caption,dock_applet_compact(r),s->content.w-text_x);
    /* An animation frame (partial) keeps the place found by the last whole
     * drawing: its caption is the one on screen. */
-   if(!partial){int used=APPLET_TEXT_X+text_width(caption);vis->applet_dx=used<s->content.w?(s->content.w-used)/2:0;}
+   if(!partial){int used=text_x+text_width(caption);vis->applet_dx=used<s->content.w?(s->content.w-used)/2:0;}
    int x=s->content.x+vis->applet_dx;
-   if(vis->sprite.pixels){
+   if(!text_x){}
+   else if(vis->sprite.pixels){
     unsigned char *frame=vis->sprite.pixels+(size_t)vis->sprite.frame*32*32*4;
     for(int sy=0;sy<32;sy++)for(int sx=0;sx<32;sx++){
      unsigned char *p=frame+4*(sy*32+sx);
@@ -1794,8 +1798,8 @@ static void render_view(int index) {
    }else if(vis->image.svg || vis->image.native.object)put_image(v,&vis->image,x,y,0);
    else {box(v,x+4,y+5,24,20,8,v->c->text_muted);put_text(v,x+11,y+6,"?",v->c->text);}
    /* An animation frame redraws the icon only; the text beside it stays. */
-   if(!partial || x+APPLET_TEXT_X<clip_x1)put_text(v,x+APPLET_TEXT_X,y+(s->content.h-th)/2,caption,v->c->text);
-   if(r && !r->package.manual && r->state.snapshot.status==DA_STALE)put_text(v,x+26,y,"*",v->c->text);
+   if(!partial || x+text_x<clip_x1)put_text(v,x+text_x,y+(s->content.h-th)/2,caption,v->c->text);
+   if(r && !r->package.manual && r->state.snapshot.status==DA_STALE)put_text(v,text_x?x+26:x+text_width(caption)+2,y,"*",v->c->text);
    if(vis->fade.from && vis->fade_pending){vis->fade.started=dock_applets_now();vis->fade_pending=0;}
    if(vis->fade.from && s->content.x>=0 && y>=0 && s->content.x+s->content.w<=v->ww && y+s->content.h<=v->wh)
     dock_fade_apply(&vis->fade,v->pixels+4*((size_t)y*v->ww+s->content.x),v->ww*4,dock_applets_now());

@@ -15,6 +15,9 @@ struct DockAppletPackage {
    * itself, only for one of the actions when the user chooses it. */
   char action_id[DA_ACTIONS][40], action_label[DA_ACTIONS][40];
   int available, api, manual, action_count;
+  /* views.json compact "icon":"none": the tile is text only, no artwork
+   * and no placeholder for it. */
+  int text_only;
 };
 struct DockAppletCatalog {
   struct DockAppletPackage packages[DA_PACKAGES];

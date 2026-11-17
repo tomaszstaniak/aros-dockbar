@@ -168,6 +168,7 @@ static void load(struct DockAppletPackage *p,
   if (dock_json_get(j, compact, "tooltip") >= 0 &&
       !str(j, compact, "tooltip", p->tooltip, sizeof p->tooltip))
     goto done;
+  p->text_only = dock_json_is(j, dock_json_get(j, compact, "icon"), "none");
   int expanded = dock_json_get(j, 0, "expanded");
   struct DockAppletView card_view;
   if (!dock_json_is(j, dock_json_get(j, expanded, "component"), "rows") &&
