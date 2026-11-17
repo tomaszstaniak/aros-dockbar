@@ -119,6 +119,12 @@ if [ "$dock_weather" = yes ]; then
       echo "Missing bundled Weather. Re-run scripts/build.sh; refusing an incomplete Dockbar package." >&2
       exit 1
     }
+  currency="$build/package/Widgets/org.aros.currency"
+  [ -f "$currency/applet.json" ] && [ -f "$currency/views.json" ] &&
+    [ -x "$currency/bin/$dock_target/CurrencyProvider" ] || {
+      echo "Missing bundled Currency. Re-run scripts/build.sh; refusing an incomplete Dockbar package." >&2
+      exit 1
+    }
 fi
 work=$(mktemp -d "${TMPDIR:-/tmp}/dockbar-pack.XXXXXX")
 trap 'rm -rf "$work"' EXIT
@@ -146,12 +152,16 @@ variant() { # name svg(0|1)
     # licence sources; the PC packages keep the list as it is.
     wlic="$repo/packaging/weather-licenses-$target.txt"
     if [ -f "$wlic" ]; then
-      readme_w="$app/Widgets/org.aros.weather/licenses/README.txt"
-      [ -f "$readme_w" ] || { echo "Missing $readme_w for $wlic" >&2; exit 1; }
-      python3 -c 'import sys
+      # Currency's provider links the same libraries; its licences drawer is
+      # a copy of Weather's and gets the same paragraph.
+      for widget in org.aros.weather org.aros.currency; do
+        readme_w="$app/Widgets/$widget/licenses/README.txt"
+        [ -f "$readme_w" ] || { echo "Missing $readme_w for $wlic" >&2; exit 1; }
+        python3 -c 'import sys
 t=open(sys.argv[1]).read(); add=open(sys.argv[2]).read(); key="License texts were retrieved"
 if key not in t: sys.exit("no licence-source line in " + sys.argv[1])
 open(sys.argv[1],"w").write(t.replace(key, add + key, 1))' "$readme_w" "$wlic" || exit 1
+      done
     fi
   fi
   cp "$work/icons/Dockbar.info" "$app/Dockbar.info"
@@ -212,6 +222,9 @@ open(sys.argv[1],"w").write(t.replace(key, add + key, 1))' "$readme_w" "$wlic" |
     cat "$notice_w" >> "$app/NOTICES"
     [ -f "$app/Widgets/org.aros.weather/assets/sprites.pak" ] &&
       cat "$repo/packaging/weather-sprites-notice.txt" >> "$app/NOTICES"
+  fi
+  if [ -d "$app/Widgets/org.aros.currency" ]; then
+    cat "$repo/packaging/currency-notice.txt" >> "$app/NOTICES"
   fi
   mkdir -p "$app/assets/tabler"
   cp "$repo"/assets/tabler/*.svg "$repo/assets/tabler/LICENSE" "$repo/assets/tabler/provenance.json" "$app/assets/tabler/"

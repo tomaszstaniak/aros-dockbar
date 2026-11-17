@@ -10,9 +10,9 @@ An Amiga-style dock for your applications, files and widgets.
 
 ## Get Dockbar
 
-[Download Dockbar 0.6.2](https://github.com/tomaszstaniak/aros-dockbar/releases/tag/v0.6.2)
+[Download Dockbar 0.7.0](https://github.com/tomaszstaniak/aros-dockbar/releases/tag/v0.7.0)
 for mainline AROS on PC, AROS One / ABIv11 on PC, or Raspberry Pi.
-Every package includes SVG icons and Weather.
+Every package includes SVG icons and the Weather and Currency widgets.
 
 Unpack the archive and open **Dockbar**. Keep the whole Dockbar drawer together.
 To start it with the system, tick **Start with Wanderer** in Preferences (Defaults
@@ -43,8 +43,9 @@ group. Open the group as a grid, and drag shortcuts into, out of or between dock
 **Keep the forecast on your desktop.** The Weather widget shows the current
 conditions and temperature on the dock. Click it for an hourly forecast and the
 next five days. Add a clock alongside it. Widgets bring information and controls
-to the dock; Weather is the included widget, with a package format for developers
-to add more.
+to the dock. Weather and Currency are included; Currency shows the main exchange
+rates in your own currency and whether they rose or fell. A package format lets
+developers add more, and a widget can lay out its own card.
 
 **Add widgets from other programs.** An application can install its own widget
 into a running Dockbar. Dockbar checks that the widget fits your system, copies
@@ -73,7 +74,7 @@ Weather screenshots show 0.5.2; the drawer panel is from 0.5-test12.
 ## Help and development
 
 - **ReadMe** in the download covers setup and starting Dockbar with the system.
-- [Release notes](https://github.com/tomaszstaniak/aros-dockbar/releases/tag/v0.6.2) cover changes and system requirements.
+- [Release notes](https://github.com/tomaszstaniak/aros-dockbar/releases/tag/v0.7.0) cover changes and system requirements.
 - [Development guide](docs/development.md) covers building, configuration and runtime options.
 - [SVG dependency](docs/svg-dependency.md) documents the renderer and packaging.
 

@@ -172,6 +172,15 @@ Using a dock
   the hourly and seven-day forecast. Weather lives in the Widgets drawer next to
   the program: install and move Dockbar as the whole drawer, never the
   program file alone.
+- Currency: add it the same way ("Add widget...", Currency, Add). The
+  tile shows what one euro (or one dollar, when the euro is your
+  currency) costs in your currency; a click opens a card with five main
+  currencies priced in yours and the change since the previous day of
+  rates. Your currency comes from the system's locale (Prefs/Locale);
+  to choose another, type its code (USD, PLN, ...) in the widget's
+  settings instead of "auto". Rates are the European Central Bank's
+  reference rates, published once on each working day. It needs the
+  network as Weather does.
 - Widgets from other programs: a program can install its own widget
   into a running Dockbar. Dockbar checks that the widget is made for this
   system, copies it into its Widgets drawer and asks whether to add it to

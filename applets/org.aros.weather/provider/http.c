@@ -12,6 +12,7 @@
 
 char weather_http_package_ca[512];
 char weather_http_log_path[512];
+char weather_http_user_agent[64] = "AROS-Weather/0.1.0";
 
 void weather_http_bundle_note(char *error, size_t cap, const char *package_ca) {
   size_t n = strlen(error);
@@ -177,7 +178,7 @@ int weather_http_get(const char *url, size_t limit, char **out, size_t *len,
     curl_easy_setopt(c, CURLOPT_FOLLOWLOCATION, 0L);
     curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, weather_http_write);
     curl_easy_setopt(c, CURLOPT_WRITEDATA, &b);
-    curl_easy_setopt(c, CURLOPT_USERAGENT, "AROS-Weather/0.1.0");
+    curl_easy_setopt(c, CURLOPT_USERAGENT, weather_http_user_agent);
     curl_easy_setopt(c, CURLOPT_ERRORBUFFER, detail);
     /* WEATHER_DEBUG set: curl's own trace on the error stream, for a
      * provider started by hand when the network does not answer. */

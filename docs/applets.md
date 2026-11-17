@@ -1,9 +1,9 @@
 ---
 type: guide
-updated: 2026-11-06
+updated: 2026-11-17
 ---
 
-# Widgets and Weather (experimental API 1 and 2)
+# Widgets, Weather and Currency (experimental API 1 and 2)
 
 A widget is a directory containing metadata, a view binding, settings, assets
 and an architecture/ABI-specific provider executable. Dockbar scans packages
@@ -17,8 +17,8 @@ stable binary plugin ABI.
 
 ## Install and use
 
-The standard builds for PC v1, PC ABIv11 and Pi include Weather in `Widgets` beside
-Dockbar. Deploy the complete package drawer; copying only the executable omits
+The standard builds for PC v1, PC ABIv11 and Pi include Weather and Currency in
+`Widgets` beside Dockbar. Deploy the complete package drawer; copying only the executable omits
 bundled widgets and other assets. Build/asset configuration is described in
 [development](development.md#bundled-weather-build). Separate widget archives
 remain supported for installing or updating independently.
@@ -39,6 +39,13 @@ cooldown); **Settings** edits that instance. Escape, Close or another click on
 the tile closes the panel. Right-click the tile to open its settings; **Remove
 widget** removes the instance for good: the shortcut, its settings and its
 cached forecast.
+
+Currency is added the same way. Its tile shows what one euro costs in your
+currency (one dollar when the euro is yours); the card lists five main currencies
+priced in your currency with the change since the previous day of rates. The
+currency comes from the system's locale; the setting takes a code such as `USD`
+instead of `auto`. Rates are the European Central Bank's euro reference rates,
+published once on each working day.
 
 A `*` on a tile and **stale** in the panel identify retained cached data.
 Unavailable measurements display `--`. A network or certificate error retains
@@ -384,6 +391,53 @@ retain the generic details fallback. The panel buffers complete frames to avoid
 flicker and closes before screen detach or dock rebuild. Settings remain native Zune.
 
 The card panel uses shared 24px content margins, centered strip columns, right-aligned list values, 32px row icons and an 84px hero. Header sliders open settings; the circular footer arrow refreshes. Pending requests show a compact Updating status.
+
+### A card the widget describes
+
+A widget can lay out its own card. In `views.json`, give `expanded` as an array
+of blocks instead of an object naming a component. Dockbar draws the blocks from
+top to bottom in the dock theme's colours and fonts, inside its own frame, with
+its settings and close controls at the top and the update time, attribution and
+refresh control at the bottom. Changing the description changes the card; Dockbar
+is not rebuilt.
+
+```json
+{
+  "schema": 1,
+  "compact": {"primary": "tile", "secondary": "pair", "icon": "none", "tooltip": "summary"},
+  "expanded": [
+    {"text": "heading"},
+    {"text": "basis", "style": "muted"},
+    {"spacer": 10},
+    {"list": "top", "max": 5, "row": [
+      {"text": "label"},
+      {"trend": "plot", "text": "detail", "align": "right"},
+      {"text": "value", "align": "right"}
+    ]}
+  ]
+}
+```
+
+| Block | Meaning |
+| --- | --- |
+| `{"text": "<field>"}` | Text of a snapshot field. `"style"` is `body` (default), `muted` or `big`; `"align": "right"` places it at the right edge |
+| `{"literal": "..."}` | Fixed text, with the same `style` and `align` |
+| `{"trend": "<numeric field>", "text": "<field>"}` | The text with a small triangle: green and pointing up when the number is above zero, red and pointing down when below, muted at zero |
+| `{"icon": "<field>"}` | Artwork named by a field, or by the snapshot's `icon` when the value is `"icon"`. `"size"` up to 32 uses the row size, larger values the 84px main image |
+| `{"separator": true}` | A thin line |
+| `{"spacer": N}` | N pixels of space (1 to 200) |
+| `{"row": [blocks]}` | Up to eight blocks side by side: left ones from the left, right-aligned ones from the right |
+| `{"list": "<section>", "max": N, "row": [blocks]}` | One row per snapshot row of that section, at most N (1 to 10, default 5). Inside the row, `text` names `label`, `value`, `detail` or `caption`, `trend` takes the row's `plot` number and `icon` the row's `icon`. Columns line up across rows |
+
+A row or list holds plain blocks only. A description has at most 48 blocks. The
+card is 464 pixels wide; its height follows the description, up to 488, and a
+list always reserves its `max` rows so the card keeps its size when data arrive.
+A description Dockbar cannot read makes the package unavailable, with the reason
+shown in **Add widget...**. The bundled Currency widget uses this form; Weather
+keeps the `cards` component.
+
+`"compact": {"icon": "none"}` gives a tile of text only: no artwork and no
+placeholder, wide enough for a short word and a number.
 
 ### Host data transitions
 

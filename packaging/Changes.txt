@@ -1,6 +1,20 @@
 Dockbar changes
 ===============
 
+0.7.0
+-----
+- Currency: a second widget that comes with Dockbar. Its tile shows the
+  price of one euro or dollar in your currency; its card lists the five
+  main currencies priced in yours and whether each rose or fell since the
+  previous day of rates. Your currency is taken from the system's locale
+  or typed in the widget's settings. Add it with "Add widget..." in the
+  dock menu. Rates: European Central Bank reference rates.
+- A widget can describe its own card: its views.json lists blocks (text,
+  trend, icon, separator, spacer, row, list) and Dockbar draws them in the
+  dock's colours. A change of the card needs no new Dockbar. See
+  Widgets-ReadMe.md.
+- A widget's tile can be text only (compact "icon": "none").
+
 0.6.2
 -----
 - Widgets stopped working after the Dockbar drawer was replaced while

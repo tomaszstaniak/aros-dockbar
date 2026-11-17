@@ -15,6 +15,9 @@ done
  "$repo/tests/test_weather.c" "$repo/applets/org.aros.weather/provider/weather.c" \
  "$repo/src/applets/json.c" "$repo/src/applets/snapshot.c" -lm -o "$run/weather"
 "$run/weather" "$repo/tests/fixtures/weather/forecast.json"
+"$compiler" $flags -I"$repo/applets/org.aros.currency/provider" "$repo/tests/test_currency_rates.c" \
+ "$repo/applets/org.aros.currency/provider/rates.c" -o "$run/rates"
+"$run/rates"
 "$compiler" $flags -I"$repo/src" "$repo/tests/test_applet_config.c" "$repo/src/docks.c" \
  "$repo/src/model.c" "$repo/src/config.c" "$repo/src/layout.c" "$repo/src/theme.c" -lm -o "$run/config"
 "$run/config" "$run/config-data"

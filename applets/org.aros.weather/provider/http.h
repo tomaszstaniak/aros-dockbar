@@ -11,6 +11,9 @@ int weather_http_get(const char *, size_t, char **, size_t *, char *, size_t);
  * (empty: none was readable) and the log file (empty: no log). */
 extern char weather_http_package_ca[512];
 extern char weather_http_log_path[512];
+/* What a request names itself as; the Currency provider, which shares this
+ * file, sets its own. */
+extern char weather_http_user_agent[64];
 /* Certificate files to try, in order: the bundled one, CURL_CA_BUNDLE, the
  * system's; empty and repeated entries are skipped. Returns the count. */
 int weather_http_ca_order(const char *package, const char *env,

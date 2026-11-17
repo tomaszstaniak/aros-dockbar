@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "fields": [
+    { "key": "currency", "label": "Your currency (code such as USD, or auto)", "type": "text", "default": "auto", "maxLength": 4 },
+    { "key": "refreshMinutes", "label": "Refresh (minutes)", "type": "integer", "min": 60, "max": 720, "default": 360 }
+  ]
+}

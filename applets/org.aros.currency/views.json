@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "compact": { "primary": "tile", "secondary": "pair", "icon": "none", "tooltip": "summary" },
+  "expanded": [
+    { "text": "heading" },
+    { "text": "basis", "style": "muted" },
+    { "spacer": 10 },
+    { "list": "top", "max": 5, "row": [
+      { "text": "label" },
+      { "trend": "plot", "text": "detail", "align": "right" },
+      { "text": "value", "align": "right" }
+    ] }
+  ]
+}

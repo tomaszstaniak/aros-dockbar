@@ -1,0 +1,9 @@
+
+Currency widget (Widgets/org.aros.currency)
+  Widget files: original work, MIT licence (see the widget's LICENSE). Its
+  provider (bin/.../CurrencyProvider) contains the same libraries as the
+  Weather widget's provider; their licence texts are in the widget's
+  licenses/ drawer, and certs/ca-bundle.crt is the same Mozilla CA
+  certificate store (Mozilla Public License 2.0).
+  Exchange rates: euro foreign exchange reference rates of the European
+  Central Bank (https://www.ecb.europa.eu/).
