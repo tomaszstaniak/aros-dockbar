@@ -139,9 +139,141 @@ static int read_content(void){
  for(int i=0;i<FADE_W*FADE_H;i++)card.fade_pixels[i*4]=255;
  return 1;
 }
+static void footer(int h){
+ const struct DockColors *c=card.colors;const struct DockAppletSnapshot *s=&card.runtime->state.snapshot;
+ char age[100];double minutes=difftime(time(NULL),(time_t)s->updated)/60;
+ if(card.runtime->state.pending)snprintf(age,sizeof age,"Updating...");
+ else if(card.runtime->state.has_data)snprintf(age,sizeof age,"%s | %.0f min ago",s->status==DA_STALE?(card.view.layout_count?"Saved":"Saved forecast"):"Updated",minutes>0?minutes:0);
+ else snprintf(age,sizeof age,"%s",s->status==DA_LOADING?"Updating":"Offline");
+ text(24,h-39,age,c->text_muted,1,365);
+ text(24,h-21,s->attribution,c->text_muted,1,365);
+ if(card.hover==5)plate(412,h-44,32,34,c->popup_hover);
+ control(4,418,h-38,1);
+}
+/* ---- a card the widget describes (view.h) ---- */
+#define LAY_TOP 18
+#define LAY_FOOT 60
+#define LAY_ROW 30
+#define LAY_GAP 12
+static int block_h(const struct DockViewNode *n){
+ switch(n->type){
+  case DV_TEXT:return n->style==DV_BIG?50:n->style==DV_MUTED?17:22;
+  case DV_TREND:return 17;
+  case DV_ICON:return n->size<=ROW_ICON?ROW_ICON:HERO_SIZE;
+  case DV_SEPARATOR:return 13;
+  case DV_SPACER:return n->size;
+  default:return 0;
+ }
+}
+static int group_h(const struct DockViewNode *n){
+ int h=block_h(n);
+ for(int k=1;k<=n->count;k++)if(block_h(n+k)>h)h=block_h(n+k);
+ if(n->type==DV_LIST)return n->size*(h>LAY_ROW?h:LAY_ROW);
+ return h;
+}
+static int layout_h(void){
+ int h=LAY_TOP+LAY_FOOT;
+ for(int i=0;i<card.view.layout_count;i+=1+card.view.layout[i].count)h+=group_h(&card.view.layout[i]);
+ return h<140?140:h>CARD_H?CARD_H:h;
+}
+static int card_h(void){return card.view.layout_count?layout_h():CARD_H;}
+static const char *block_text(const struct DockViewNode *n,const struct DockAppletRow *r){
+ if(n->literal[0])return n->literal;
+ if(!n->source[0])return "";
+ if(!r)return dock_applet_field(&card.runtime->state.snapshot,n->source);
+ return !strcmp(n->source,"label")?r->label:!strcmp(n->source,"value")?r->value:!strcmp(n->source,"detail")?r->detail:
+        !strcmp(n->source,"caption")?r->caption:"";
+}
+static int block_number(const struct DockViewNode *n,const struct DockAppletRow *r,double *out){
+ const struct DockAppletSnapshot *s=&card.runtime->state.snapshot;
+ if(r){if(!r->has_plot)return 0;*out=r->plot;return 1;}
+ for(int i=0;i<s->field_count;i++)if(!strcmp(s->fields[i].key,n->number)&&s->fields[i].numeric){*out=s->fields[i].number;return 1;}
+ return 0;
+}
+static int block_style(const struct DockViewNode *n){return n->type==DV_TREND||n->style==DV_MUTED?1:n->style==DV_BIG?2:0;}
+static int block_w(const struct DockViewNode *n,const struct DockAppletRow *r){
+ char value[200];
+ switch(n->type){
+  case DV_TEXT:clean(value,sizeof value,block_text(n,r));return text_width(value,block_style(n));
+  case DV_TREND:clean(value,sizeof value,block_text(n,r));return text_width(value,1)+13;
+  case DV_ICON:return block_h(n);
+  case DV_SPACER:return n->size;
+  default:return 0;
+ }
+}
+/* Draws one block in the box x,y,w,h; text keeps to its side of the box. */
+static void block_draw(const struct DockViewNode *n,const struct DockAppletRow *r,int x,int y,int w,int h){
+ const struct DockColors *c=card.colors;int own=block_h(n),top=y+(h-own)/2;
+ if(n->type==DV_TEXT){
+  unsigned long tone=n->style==DV_MUTED?c->text_muted:c->text;int ty=top+(n->style==DV_BIG?2:3);
+  if(n->right)aligned(x,ty,w,block_text(n,r),tone,block_style(n),1);
+  else text(x,ty,block_text(n,r),tone,block_style(n),w);
+ }
+ if(n->type==DV_TREND){
+  double v=0;int known=block_number(n,r,&v);const char *t=block_text(n,r);
+  /* readable on the dark and on the light card */
+  unsigned long tone=!known||v==0?c->text_muted:v>0?0x35a96bUL:0xdc5b52UL;
+  char value[200];clean(value,sizeof value,t);
+  int tw=text_width(value,1);if(tw>w-13)tw=w-13;
+  int tx=n->right?x+w-tw:x+13;
+  text(tx,top+3,value,tone,1,tw);
+  if(known&&v!=0){struct RastPort *rp=&card.buffer.rp;int ax=tx-8,ay=top+6;color(tone);
+   for(int i=0;i<5;i++){int half=v>0?i:4-i;Move(rp,ax-half,ay+i);Draw(rp,ax+half,ay+i);}}
+ }
+ if(n->type==DV_ICON){
+  const char *key=r?r->icon:!strcmp(n->source,"icon")?card.runtime->state.snapshot.icon:block_text(n,NULL);
+  if(own==ROW_ICON)image(icon(key),ROW_ICON,x,top);
+  else{unsigned char *hero=card.hero.pixels?card.hero.pixels+(size_t)card.hero.frame*HERO_SIZE*HERO_SIZE*4:card.hero_static;image(hero,HERO_SIZE,x,top);}
+ }
+}
+/* One line of blocks between x0 and x1: left ones from the left, right ones
+ * from the right; widths[] gives each block's column (shared by list rows). */
+static void line_draw(const struct DockViewNode *n,int count,const struct DockAppletRow *r,const int *widths,int x0,int x1,int y,int h){
+ for(int k=0;k<count;k++)if(!n[k].right){int w=widths[k];if(x0+w>x1)w=x1-x0;if(w>0)block_draw(&n[k],r,x0,y,w,h);x0+=w+LAY_GAP;}
+ for(int k=count-1;k>=0;k--)if(n[k].right){int w=widths[k];if(x1-w<x0)w=x1-x0;if(w>0)block_draw(&n[k],r,x1-w,y,w,h);x1-=w+LAY_GAP;}
+}
+static void draw_layout(void){
+ const struct DockColors *c=card.colors;struct RastPort *rp=&card.buffer.rp;
+ const struct DockAppletSnapshot *s=&card.runtime->state.snapshot;
+ struct DockFrameStyle frame={c->popup_fill,c->popup_fill,c->popup_border,c->popup_border};
+ int height=card_h(),y=LAY_TOP;const int margin=24;
+ unsigned long separator=dock_mix(c->popup_fill,c->separator,0.4f);
+ dock_frame_draw(rp,&frame,CARD_W,height,dock_corner_radius);
+ if(card.hover==1)plate(382,9,32,30,c->popup_hover);
+ if(card.hover==2)plate(420,9,30,30,c->popup_hover);
+ control(0,388,14,1);
+ control(1,425,15,1);
+ if(!card.runtime->state.has_data){
+  text(margin,18,card.runtime->package.name,c->text,0,326);
+  text(margin,55,s->status==DA_LOADING?"Loading...":"Data unavailable",c->text,0,310);
+  text(margin,80,"Choose Settings to check this widget",c->text_muted,1,360);
+ }else for(int i=0;i<card.view.layout_count&&y<height-LAY_FOOT;i+=1+card.view.layout[i].count){
+  const struct DockViewNode *n=&card.view.layout[i];
+  int h=group_h(n),x1=CARD_W-margin,widths[8];
+  /* beside the header controls a line is shorter */
+  if(y<42)x1=370;
+  if(n->type==DV_SEPARATOR)line(margin,y+6,x1,y+6,separator);
+  else if(n->type==DV_ROW){
+   for(int k=0;k<n->count;k++)widths[k]=block_w(n+1+k,NULL);
+   line_draw(n+1,n->count,NULL,widths,margin,x1,y,h);
+  }else if(n->type==DV_LIST){
+   int entries[DA_ROWS],count=rows(n->source,entries),rh=h/n->size;
+   if(count>n->size)count=n->size;
+   for(int k=0;k<n->count;k++){widths[k]=0;for(int e=0;e<count;e++){int w=block_w(n+1+k,&s->rows[entries[e]]);if(w>widths[k])widths[k]=w;}}
+   for(int e=0;e<count&&y+e*rh+rh<=height-LAY_FOOT;e++){
+    if(e)line(margin,y+e*rh,x1,y+e*rh,separator);
+    line_draw(n+1,n->count,&s->rows[entries[e]],widths,margin,x1,y+e*rh,rh);
+   }
+  }else{widths[0]=n->type==DV_TEXT||n->type==DV_TREND?x1-margin:block_w(n,NULL);line_draw(n,1,NULL,widths,margin,x1,y,h);}
+  y+=h;
+ }
+ footer(height);
+ dock_buffer_show(&card.buffer,card.window);card.dirty=0;
+}
 static void draw(void){
  const struct DockColors *c=card.colors;struct RastPort *rp=&card.buffer.rp;
  const struct DockAppletSnapshot *s=&card.runtime->state.snapshot;
+ if(card.view.layout_count){draw_layout();return;}
  struct DockFrameStyle frame={c->popup_fill,c->popup_fill,c->popup_border,c->popup_border};
  dock_frame_draw(rp,&frame,CARD_W,CARD_H,dock_corner_radius);
  const int margin=24,inner=CARD_W-2*margin;
@@ -198,14 +330,7 @@ static void draw(void){
   aligned(170,y+5,70,r->detail,c->text_muted,1,1);
   aligned(272,y+3,168,r->value,c->text,0,1);
  }
- char age[100];double minutes=difftime(time(NULL),(time_t)s->updated)/60;
- if(card.runtime->state.pending)snprintf(age,sizeof age,"Updating...");
- else if(card.runtime->state.has_data)snprintf(age,sizeof age,"%s | %.0f min ago",s->status==DA_STALE?"Saved forecast":"Updated",minutes>0?minutes:0);
- else snprintf(age,sizeof age,"%s",s->status==DA_LOADING?"Updating":"Offline");
- text(margin,449,age,c->text_muted,1,365);
- text(margin,467,s->attribution,c->text_muted,1,365);
- if(card.hover==5)plate(412,444,32,34,c->popup_hover);
- control(4,418,450,1);
+ footer(CARD_H);
  if(card.fade.from){
   if(read_content()){
    dock_fade_apply(&card.fade,card.fade_pixels,FADE_W*4,dock_applets_now());
@@ -234,7 +359,8 @@ int dock_applet_cards_open(struct Screen *screen,struct DockAppletRuntime *r,int
  dock_applet_cards_close();char path[DA_PATH];size_t n;char *b=NULL;
  if(!dock_applet_path(r->package.root,"views.json",path,sizeof path)||(b=dock_applet_read(path,65536,&n))==NULL)return 0;
  int valid=dock_applet_view_parse(b,n,&card.view);free(b);if(!valid)return 0;
- if(screen->Width<CARD_W+16||screen->Height-screen->BarHeight<CARD_H+16)return 0;
+ int h=card_h();
+ if(screen->Width<CARD_W+16||screen->Height-screen->BarHeight<h+16)return 0;
  card.screen=screen;card.runtime=r;last=r;card.colors=colors?colors:dock_colors(0);
  card.ax=ax;card.ay=ay;card.aw=aw;card.ah=ah;card.pen=-1;
  size_t size=0;
@@ -243,11 +369,11 @@ int dock_applet_cards_open(struct Screen *screen,struct DockAppletRuntime *r,int
   card.font=malloc((size_t)length);if(card.font&&fread(card.font,1,length,f)==(size_t)length)size=length;
  }}fclose(f);}
  if(size){const unsigned char *font=card.font;dock_text_open(&card.regular,&font,&size,1,14,DOCK_CODESET_LATIN1);dock_text_open(&card.small,&font,&size,1,11,DOCK_CODESET_LATIN1);dock_text_open(&card.large,&font,&size,1,40,DOCK_CODESET_LATIN1);}
- int x,y;dock_applet_anchor(screen->Width,screen->Height,screen->BarHeight,CARD_W,CARD_H,ax,ay,aw,ah,vertical,&x,&y);
- card.shape=dock_shape(CARD_W,CARD_H,dock_corner_radius);
- if(!card.shape||!dock_buffer_open(&card.buffer,screen,CARD_W,CARD_H))goto fail;
+ int x,y;dock_applet_anchor(screen->Width,screen->Height,screen->BarHeight,CARD_W,h,ax,ay,aw,ah,vertical,&x,&y);
+ card.shape=dock_shape(CARD_W,h,dock_corner_radius);
+ if(!card.shape||!dock_buffer_open(&card.buffer,screen,CARD_W,h))goto fail;
  SetFont(&card.buffer.rp,screen->RastPort.Font);
- card.window=OpenWindowTags(NULL,WA_PubScreen,(IPTR)screen,WA_Left,x,WA_Top,y,WA_Width,CARD_W,WA_Height,CARD_H,
+ card.window=OpenWindowTags(NULL,WA_PubScreen,(IPTR)screen,WA_Left,x,WA_Top,y,WA_Width,CARD_W,WA_Height,h,
   WA_ShapeRegion,(IPTR)card.shape,WA_Borderless,TRUE,WA_Activate,TRUE,WA_RMBTrap,TRUE,WA_ReportMouse,TRUE,WA_SimpleRefresh,TRUE,
   WA_IDCMP,IDCMP_MOUSEBUTTONS|IDCMP_MOUSEMOVE|IDCMP_RAWKEY|IDCMP_INACTIVEWINDOW|IDCMP_REFRESHWINDOW,TAG_DONE);
  if(!card.window)goto fail;
@@ -257,9 +383,10 @@ int dock_applet_cards_open(struct Screen *screen,struct DockAppletRuntime *r,int
 static int hit(int x,int y){
  if(x>=382&&x<414&&y>=9&&y<39)return 1;
  if(x>=420&&x<450&&y>=9&&y<39)return 2;
- if(x>=383&&x<411&&y>=162&&y<189)return 3;
- if(x>=420&&x<448&&y>=162&&y<189)return 4;
- if(x>=412&&x<444&&y>=444&&y<478)return 5;
+ int h=card_h(),full=!card.view.layout_count;
+ if(full&&x>=383&&x<411&&y>=162&&y<189)return 3;
+ if(full&&x>=420&&x<448&&y>=162&&y<189)return 4;
+ if(x>=412&&x<444&&y>=h-44&&y<h-10)return 5;
  return 0;
 }
 int dock_applet_cards_poll(uint64_t now){
@@ -286,7 +413,8 @@ int dock_applet_cards_poll(uint64_t now){
   uint64_t signature=visible_signature();
   hero_load(now);
   if(signature!=card.signature){
-   if(!dock_transitions_enabled || !read_content() ||
+   /* the cross-fade region belongs to the full card */
+   if(card.view.layout_count || !dock_transitions_enabled || !read_content() ||
       !dock_fade_begin(&card.fade,card.fade_pixels,FADE_W*4,FADE_W,FADE_H,dock_applets_now()))dock_fade_clear(&card.fade);
   }
   card.signature=signature;card.revision=card.runtime->state.view_revision;card.dirty=1;

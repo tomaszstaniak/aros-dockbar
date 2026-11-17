@@ -12,6 +12,18 @@ int main(void){
  assert(!dock_applet_view_parse("{}",2,&v));assert(!memcmp(&v,&old,sizeof v));
  const char *bad="{\"schema\":1,\"expanded\":{\"component\":\"cards\",\"title\":\"x\",\"value\":\"x\",\"metrics\":[{},{},{}]}}";
  assert(!dock_applet_view_parse(bad,strlen(bad),&v));
+ /* a card the widget describes itself */
+ struct DockAppletView l={0};
+ const char *own="{\"schema\":1,\"expanded\":[{\"text\":\"heading\"},{\"text\":\"basis\",\"style\":\"muted\"},"
+  "{\"list\":\"top\",\"max\":5,\"row\":[{\"text\":\"label\"},{\"trend\":\"plot\",\"text\":\"detail\",\"align\":\"right\"},{\"text\":\"value\",\"align\":\"right\"}]}]}";
+ assert(dock_applet_view_parse(own,strlen(own),&l)&&l.layout_count==6);
+ assert(l.layout[0].type==DV_TEXT&&l.layout[1].style==DV_MUTED&&l.layout[2].type==DV_LIST&&l.layout[2].count==3&&l.layout[2].size==5);
+ assert(l.layout[4].type==DV_TREND&&l.layout[4].right&&!strcmp(l.layout[4].source,"detail")&&l.layout[5].right);
+ const char *wrong[]={"{\"schema\":1,\"expanded\":[]}","{\"schema\":1,\"expanded\":[{\"paint\":1}]}",
+  "{\"schema\":1,\"expanded\":[{\"row\":[{\"row\":[{\"text\":\"a\"}]}]}]}","{\"schema\":1,\"expanded\":[{\"text\":\"a\",\"style\":\"huge\"}]}",
+  "{\"schema\":1,\"expanded\":[{\"list\":\"top\",\"max\":99,\"row\":[{\"text\":\"label\"}]}]}"};
+ for(unsigned i=0;i<sizeof wrong/sizeof *wrong;i++)assert(!dock_applet_view_parse(wrong[i],strlen(wrong[i]),&l));
+ assert(!v.layout_count);
  struct DockAppletSnapshot snapshot={0};
  strcpy(snapshot.icon,"cloudy");snapshot.field_count=1;
  strcpy(snapshot.fields[0].key,"temperature");strcpy(snapshot.fields[0].text,"16 C");
