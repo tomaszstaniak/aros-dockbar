@@ -1,6 +1,14 @@
 Dockbar changes
 ===============
 
+0.7.1
+-----
+- Mainline AROS only: built for nightly builds of 2026-11-24 or later. That
+  nightly changed a system structure that programs are built against, and
+  0.7.0 does not work reliably on it. Dockbar, its widgets and
+  svgicon.library are built with the SDK of that nightly. On an earlier
+  nightly, keep 0.7.0. No other changes; ABIv11 stays at 0.7.0.
+
 0.7.0
 -----
 - Currency: a second widget that comes with Dockbar. Its tile shows the
