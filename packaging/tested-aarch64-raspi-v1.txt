@@ -1,6 +1,6 @@
 - Tested only on AROS for Raspberry Pi under QEMU (raspi3b, nightly of
-  2026-11-10 without SMP; earlier versions also with SMP and on the
-  nightlies of 2026-10-29 and 2026-11-05), not on a real Raspberry Pi or with sound. Under
+  2026-11-24 without SMP; earlier versions also with SMP and on the
+  nightlies of 2026-10-29, 2026-11-05 and 2026-11-10), not on a real Raspberry Pi or with sound. Under
   QEMU the emulated USB network device is taken by either
   usbcdceth.device or usbrndis.device, depending on timing; a network set
   up for one of them does not start when the other one took the device.
